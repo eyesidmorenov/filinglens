@@ -16,8 +16,10 @@ import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
 from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+# load_dotenv()
+load_dotenv(Path(__file__).parent / ".env")
 
 BUCKET = "anyoneai-datasets"
 PREFIX = "nasdaq_annual_reports/"
