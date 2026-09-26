@@ -2,121 +2,133 @@
 
 **Financial Advisor Chatbot for NASDAQ companies**
 
-Un asistente que responde preguntas sobre empresas del NASDAQ leyendo sus reportes anuales, y que siempre dice de dónde sacó cada dato.
+An assistant that answers questions about NASDAQ-listed companies by reading their annual filings, and always says where each answer came from.
 
-Proyecto final del programa **ML Developer Career** de [Anyone AI](https://anyoneai.com). Equipo 3.
+Final project for the **ML Developer Career** program at [Anyone AI](https://anyoneai.com). Team 3.
 
----
-
-## El problema
-
-Una empresa que cotiza en bolsa publica cada año un informe llamado **10-K**: entre cien y trescientas páginas donde declara su negocio, sus riesgos, su estrategia y sus estados financieros. Es el documento más confiable que existe sobre una empresa, y también uno de los más difíciles de leer.
-
-Quien quiera comparar tres empresas tiene que abrir seiscientas páginas de PDF y buscar a mano.
-
-**FilingLens lee eso y responde en segundos.**
-
-## La regla del producto
-
-> Toda respuesta viene con su fuente: empresa, año fiscal, sección y página.
-
-En finanzas una cifra sin respaldo no sirve, y un dato inventado es peor que un "no sé". Esta regla define el prompt, define la interfaz y define cómo medimos si el sistema funciona.
-
-**No es un asesor de inversiones.** No recomienda comprar ni vender. Reporta lo que las empresas declaran en sus documentos oficiales, nada más.
+[English](README.md) · [Español](README.es.md)
 
 ---
 
-## Arquitectura
+## The problem
 
-El sistema tiene dos momentos que corren por separado.
+Every publicly traded company files an annual report called a **10-K**: 100 to 300 pages covering its business, risks, strategy and financial statements. It is the most reliable document that exists about a company, and also one of the hardest to read.
 
-**Indexación, una sola vez.** Los documentos bajan de S3, se les extrae el texto, se limpian, se parten en fragmentos por sección, se les calcula un vector y se guardan en el índice.
+Comparing three companies means opening 600 pages of PDF and searching by hand.
+
+**FilingLens reads that and answers in seconds.**
+
+## The product rule
+
+> Every answer comes with its source: company, fiscal year, section and page.
+
+In finance a number without backing is useless, and a made-up figure is worse than "I don't know". This rule shapes the prompt, shapes the interface, and defines how we measure whether the system works.
+
+**This is not an investment advisor.** It does not recommend buying or selling. It reports what companies state in their official filings, nothing more.
+
+---
+
+## Architecture
+
+The system has two flows that run independently.
+
+**Indexing, once.** Documents are pulled from S3, text is extracted and cleaned, split into chunks by section, embedded, and stored in the index.
 
 ```
-S3 → PyMuPDF → limpieza → chunking → embeddings → Elasticsearch
+S3 → PyMuPDF → cleaning → chunking → embeddings → Elasticsearch
 ```
 
-**Consulta, en cada pregunta.** La pregunta entra por la interfaz, se detecta de qué empresa y año habla, se busca en el índice por palabras y por significado a la vez, se fusionan las dos listas y un modelo redacta la respuesta con sus citas.
+**Querying, on every question.** The question comes in through the chat UI, the company and year are detected, the index is searched by keyword and by meaning at the same time, both result lists are fused, and a language model writes the answer with its citations.
 
 ```
-Chainlit → FastAPI → Haystack (BM25 + vectores → RRF) → Claude → respuesta con fuentes
+Chainlit → FastAPI → Haystack (BM25 + vectors → RRF) → Claude → answer with sources
 ```
 
 ## Stack
 
-| Pieza | Herramienta | Por qué |
+| Piece | Tool | Why |
 | --- | --- | --- |
-| Índice | Elasticsearch | Guarda texto y vectores en un solo servicio, gratis, corre en un contenedor |
-| Orquestación | Haystack | Framework especialista en documentos, trae la fusión RRF hecha |
-| Embeddings | BGE local | Sin llave, sin cuota, todos tenemos exactamente lo mismo |
-| Generación | Claude (Anthropic) | Acceso ya disponible, sin riesgo de quedarnos sin créditos |
+| Index | Elasticsearch | Stores text and vectors in a single service, free, runs in a container |
+| Orchestration | Haystack | Document-focused framework, ships RRF fusion out of the box |
+| Embeddings | BGE local | No API key, no quota, everyone runs exactly the same thing |
+| Generation | Claude (Anthropic) | Access already available, no risk of running out of credits |
 | API | FastAPI | |
-| Interfaz | Chainlit | Python puro, sin JavaScript |
-| Contenedores | Docker Compose | Entregable obligatorio |
+| Interface | Chainlit | Pure Python, no JavaScript needed |
+| Containers | Docker Compose | Required deliverable |
 
-**Elasticsearch y Haystack no son alternativas, son piezas distintas.** Elasticsearch ejecuta la búsqueda: recorre el índice y devuelve lo que coincide. Haystack la dirige: parte los documentos, genera los embeddings, pregunta dos veces, fusiona las listas y arma el prompt.
+**Elasticsearch and Haystack are not alternatives, they are different pieces.** Elasticsearch *executes* the search: it scans the index and returns matches. Haystack *directs* it: splits documents, generates embeddings, queries twice, fuses the lists and builds the prompt.
+
+| Question | Elasticsearch | Haystack |
+| --- | --- | --- |
+| Who splits the PDFs into chunks? | No | Yes |
+| Who generates the embeddings? | No | Yes |
+| Who fuses both searches with RRF? | No | Yes |
+| Who passes context to Claude? | No | Yes |
+| Who stores chunks and returns them? | Yes | No |
 
 ---
 
-## El dataset
+## The dataset
 
-Reportes anuales y 10-K de empresas listadas en el NASDAQ, alojados en S3 por Anyone AI.
+Annual reports and 10-K filings from NASDAQ-listed companies, hosted on S3 by Anyone AI.
 
-| Medida | Valor |
+| Measure | Value |
 | --- | --- |
-| Documentos | 9.855 PDF |
-| Peso total | 29,8 GB |
-| Peso promedio | 3,1 MB por documento |
-| Empresas | 2.429 |
-| Rango de años | 2015 a 2022, con densidad entre 2018 y 2021 |
+| Documents | 9,855 PDFs |
+| Total size | 29.8 GB |
+| Average size | 3.1 MB per document |
+| Companies | 2,429 |
+| Year range | 2015 to 2022, density between 2018 and 2021 |
 
-### Dos hallazgos que definieron el alcance
+### Findings that shaped the scope
 
-**La metadata está en el nombre del archivo.** La ruta `nasdaq_annual_reports/apple-inc/NASDAQ_AAPL_2019.pdf` contiene empresa, bolsa, ticker y año. No hay que abrir el PDF para extraerlos.
+**Metadata lives in the filename.** The path `nasdaq_annual_reports/apple-inc/NASDAQ_AAPL_2019.pdf` contains company, exchange, ticker and year. No need to open the PDF to extract them.
 
-**El dataset se corta en 2021.** No hay documentos de 2023 en adelante, y 2022 tiene apenas 160 archivos contra los 2.237 de 2019. Por eso el alcance del proyecto son **2019, 2020 y 2021**.
+**The dataset ends in 2021.** There are no documents from 2023 onward, and 2022 holds only 160 files against 2,237 for 2019. That is why the project scope is **2019, 2020 and 2021**.
 
-Si alguien pregunta por un año fuera de rango, el bot lo dice en vez de callar o inventar.
+**There are two document types, not one.** Some files are the SEC Form 10-K, with numbered Item sections. Others are the shareholder Annual Report, which has no such structure. Across the working sample, 79% are 10-K filings.
+
+If someone asks about a year outside the range, the bot says so instead of staying silent or making something up.
 
 ---
 
-## Alcance
+## Scope
 
-**Dentro:** 25 empresas reconocibles del NASDAQ, tres años fiscales, solo 10-K en inglés, búsqueda híbrida, respuesta con cita de empresa, año, sección y página, interfaz de chat, API, todo contenerizado, y un set de evaluación para medir la calidad.
+**In scope:** 25 recognizable NASDAQ companies, three fiscal years, 10-K filings in English only, hybrid search, answers citing company, year, section and page, a chat interface, an API, full containerization, and an evaluation set to measure quality.
 
-**Fuera:** las 2.429 empresas del dataset completo, búsqueda de noticias en internet, autenticación, gráficos, tablas financieras como datos estructurados, comparaciones entre varias empresas en una sola respuesta, cálculos aritméticos, y cualquier forma de recomendación de inversión.
+**Out of scope:** the full 2,429-company dataset, live news search, authentication, charts, financial tables as structured data, multi-company comparisons in a single answer, arithmetic over retrieved figures, and any form of investment recommendation.
 
-### Qué tipo de preguntas responde
+### What kind of questions it answers
 
-| Categoría | Ejemplo |
+| Category | Example |
 | --- | --- |
-| Caso natural | ¿Cuáles son los principales factores de riesgo que identifica NVIDIA? |
-| Con trabajo | ¿Cuáles fueron los ingresos de Apple en el año fiscal 2021? |
-| Fuera de alcance | Compara NVIDIA con AMD en márgenes |
+| Natural fit | What are the main risk factors NVIDIA identifies? |
+| Needs work | What was Apple's revenue in fiscal year 2021? |
+| Out of scope | Compare NVIDIA and AMD on margins |
 
-Las de la tercera fila se rechazan con elegancia. **Un bot que conoce sus límites impresiona más que uno que improvisa.**
+The third row gets declined gracefully. **A bot that knows its limits is more convincing than one that improvises.**
 
 ---
 
-## Estructura del repositorio
+## Repository layout
 
 ```
 filinglens/
-├── eda/            Exploración y análisis del dataset
-├── etl/            Extracción de texto y chunking
-├── index/          Elasticsearch, embeddings, carga
-├── search/         Pipeline de recuperación y evaluación
-├── generation/     Prompt y conexión con Claude
+├── eda/            Dataset exploration and analysis
+├── etl/            Text extraction and chunking
+├── index/          Elasticsearch, embeddings, loading
+├── search/         Retrieval pipeline and evaluation
+├── generation/     Prompt and Claude integration
 ├── api/            FastAPI
 ├── ui/             Chainlit
-└── data/           Documentos y resultados intermedios (no se sube)
+└── data/           Documents and intermediate output (not tracked)
 ```
 
-Cada carpeta corresponde a un entregable y tiene un dueño. Se crean a medida que cada carril arranca.
+Each folder maps to a deliverable and has an owner. They are created as each lane starts.
 
 ---
 
-## Cómo empezar
+## Getting started
 
 ```bash
 git clone https://github.com/eyesidmorenov/filinglens.git
@@ -126,33 +138,33 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r eda/requirements.txt
 ```
 
-### Credenciales
+### Credentials
 
 ```bash
 cp eda/.env.example eda/.env
 ```
 
-Abre `eda/.env` y pon las llaves de AWS que vienen en el brief del curso.
+Open `eda/.env` and paste the AWS keys provided in the course brief.
 
-> **Las llaves nunca entran al repositorio.** Ni en el código, ni en un notebook, ni en el historial de commits. El `.gitignore` ya excluye el `.env`. Verifícalo antes del primer commit con `git check-ignore -v eda/.env`.
+> **Keys never enter the repository.** Not in code, not in a notebook, not in commit history. The `.gitignore` already excludes `.env`. Verify before your first commit with `git check-ignore -v eda/.env`.
 
-### Correr el EDA
+### Running the EDA
 
 ```bash
-python eda/explore_s3.py          # explora el bucket, no descarga nada
-python eda/download_sample.py     # descarga la muestra de trabajo
-python eda/characterize.py        # caracteriza los documentos
+python eda/explore_s3.py          # lists the bucket, downloads nothing
+python eda/download_sample.py     # downloads the working sample
+python eda/characterize.py        # measures the documents
 ```
 
-El script de descarga es **determinista**: baja siempre exactamente los mismos archivos, sin importar quién lo corra. Así todo el equipo trabaja con la misma muestra y los resultados son comparables.
+The download script is **deterministic**: it always fetches exactly the same files, regardless of who runs it. That way the whole team works from an identical sample and results are comparable.
 
 ---
 
-## Contratos de datos
+## Data contracts
 
-Cada pieza del sistema entrega a la siguiente en un formato fijo. Eso permite que los seis carriles avancen en paralelo sin esperarse: quien necesita algo que otro está construyendo trabaja contra datos falsos con la forma correcta hasta que lleguen los reales.
+Each piece of the system hands off to the next in a fixed shape. That is what lets six lanes move in parallel without waiting on each other: whoever needs something another lane is still building works against mock data in the right shape until the real thing lands.
 
-**Documento**, entre descarga y extracción:
+**Document**, between download and extraction:
 
 ```json
 {
@@ -167,7 +179,7 @@ Cada pieza del sistema entrega a la siguiente en un formato fijo. Eso permite qu
 }
 ```
 
-**Fragmento**, entre chunking e indexación:
+**Chunk**, between chunking and indexing:
 
 ```json
 {
@@ -182,7 +194,7 @@ Cada pieza del sistema entrega a la siguiente en un formato fijo. Eso permite qu
 }
 ```
 
-**Respuesta de la API**, entre backend y frontend:
+**API response**, between backend and frontend:
 
 ```json
 {
@@ -194,50 +206,50 @@ Cada pieza del sistema entrega a la siguiente en un formato fijo. Eso permite qu
 }
 ```
 
-Cambiar un contrato se anuncia en el equipo antes de hacerlo, porque del otro lado hay alguien construyendo contra esa forma.
+Changing a contract gets announced to the team first, because someone on the other side is building against that shape.
 
 ---
 
-## Cómo trabajamos
+## How we work
 
-- **Todos contra `main`.** Los carriles no se tocan, así que los conflictos son mínimos
-- **Cada quien en su carpeta**
-- **Nada de datos al repositorio.** Los PDF se obtienen corriendo el script de descarga
-- **`git pull` antes de empezar** evita la mayoría de los enredos
-- **Commits con contexto:** `tipo(carril): qué hiciste`
+- **Everyone on `main`.** Lanes do not overlap, so conflicts are rare
+- **Each person in their own folder**
+- **No data in the repository.** PDFs come from running the download script
+- **`git pull` before you start** avoids most of the mess
+- **Commits with context:** `type(lane): what you did`
 
-### Configura tu identidad
+### Set your identity
 
-Dentro de la carpeta del proyecto, para que tus commits aparezcan a tu nombre:
+Inside the project folder, so your commits show up under your name:
 
 ```bash
-git config user.name "Tu Nombre"
-git config user.email "tucorreo@ejemplo.com"
+git config user.name "Your Name"
+git config user.email "you@example.com"
 ```
 
-Sin `--global`, así solo aplica a este repositorio. El historial de commits es la evidencia de quién aportó qué.
+No `--global`, so it only applies to this repository. Commit history is the record of who contributed what.
 
 ---
 
-## Entregables
+## Deliverables
 
-| # | Entregable | Carpeta |
+| # | Deliverable | Folder |
 | --- | --- | --- |
-| 1 | Análisis exploratorio del dataset | `eda/` |
-| 2 | Scripts de preprocesamiento | `etl/` |
-| 3 | Scripts de almacenamiento en la base | `index/` |
-| 4 | Sistema de pregunta, búsqueda y respuesta | `search/` y `generation/` |
+| 1 | Exploratory dataset analysis | `eda/` |
+| 2 | Preprocessing scripts | `etl/` |
+| 3 | Database storage scripts | `index/` |
+| 4 | Question, search and answer system | `search/` and `generation/` |
 | 5 | API | `api/` |
-| 6 | Interfaz tipo ChatGPT | `ui/` |
-| 7 | Presentar resultados y demo | todos |
-| 8 | Todo contenerizado con Docker | raíz |
+| 6 | ChatGPT-style interface | `ui/` |
+| 7 | Present results and demo | everyone |
+| 8 | Full Docker containerization | root |
 
 ---
 
-## Equipo
+## Team
 
-Seis integrantes, cada uno responsable de un carril. Ver el documento de acuerdos y reparto para el detalle de quién lleva qué.
+Six members, each owning one lane. See the team agreements document for who covers what.
 
-## Licencia
+## License
 
-Proyecto académico. El dataset es propiedad de Anyone AI y los documentos originales son públicos, presentados ante la SEC por las empresas emisoras.
+Academic project. The dataset belongs to Anyone AI, and the underlying documents are public filings submitted to the SEC by the issuing companies.
