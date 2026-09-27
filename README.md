@@ -77,14 +77,16 @@ Annual reports and 10-K filings from NASDAQ-listed companies, hosted on S3 by An
 | Documents | 9,855 PDFs |
 | Total size | 29.8 GB |
 | Average size | 3.1 MB per document |
-| Companies | 2,429 |
-| Year range | 2015 to 2022, density between 2018 and 2021 |
+| Companies | 2,428 |
+| Year range | 2003 to 2022, with nearly 80% between 2018 and 2021 |
 
 ### Findings that shaped the scope
 
-**Metadata lives in the filename.** The path `nasdaq_annual_reports/apple-inc/NASDAQ_AAPL_2019.pdf` contains company, exchange, ticker and year. No need to open the PDF to extract them.
+**Metadata lives in the filename.** The path `nasdaq_annual_reports/apple-inc/NASDAQ_AAPL_2019.pdf` contains company, exchange, ticker and year. No need to open the PDF to extract them. The convention holds for 9,852 of 9,855 files; 45 of them carry a 32-character hash suffix, and the only exception is Fox Corporation.
 
-**The dataset ends in 2021.** There are no documents from 2023 onward, and 2022 holds only 160 files against 2,237 for 2019. That is why the project scope is **2019, 2020 and 2021**.
+**The ticker is the key, not the company folder.** 11 tickers appear twice for the same year, because of typos in folder names, company renames, or the same file uploaded with and without the hash. Documents are identified by `ticker` + `fiscal_year`, keeping one file per pair.
+
+**The dataset ends in 2021.** There are no documents from 2023 onward, and 2022 holds only 160 files against 2,236 for 2019. That is why the project scope is **2019, 2020 and 2021**.
 
 **There are two document types, not one.** Some files are the SEC Form 10-K, with numbered Item sections. Others are the shareholder Annual Report, which has no such structure. Across the working sample, 79% are 10-K filings.
 
@@ -96,7 +98,7 @@ If someone asks about a year outside the range, the bot says so instead of stayi
 
 **In scope:** 25 recognizable NASDAQ companies, three fiscal years, 10-K filings in English only, hybrid search, answers citing company, year, section and page, a chat interface, an API, full containerization, and an evaluation set to measure quality.
 
-**Out of scope:** the full 2,429-company dataset, live news search, authentication, charts, financial tables as structured data, multi-company comparisons in a single answer, arithmetic over retrieved figures, and any form of investment recommendation.
+**Out of scope:** the full 2,428-company dataset, live news search, authentication, charts, financial tables as structured data, multi-company comparisons in a single answer, arithmetic over retrieved figures, and any form of investment recommendation.
 
 ### What kind of questions it answers
 
@@ -151,10 +153,12 @@ Open `eda/.env` and paste the AWS keys provided in the course brief.
 ### Running the EDA
 
 ```bash
-python eda/explore_s3.py          # lists the bucket, downloads nothing
+python eda/explore_s3.py          # lists the bucket, downloads nothing, saves the bucket inventory
 python eda/download_sample.py     # downloads the working sample
 python eda/characterize.py        # measures the documents
 ```
+
+Then open `eda/eda_filinglens.ipynb` and run all cells. The scripts measure and write to `data/eda/`; the notebook only reads those results, so no figure in it is typed by hand.
 
 The download script is **deterministic**: it always fetches exactly the same files, regardless of who runs it. That way the whole team works from an identical sample and results are comparable.
 

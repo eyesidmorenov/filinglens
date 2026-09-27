@@ -4,25 +4,42 @@ Explora el bucket de S3 sin descargar nada.
 Objetivo: entender cómo está organizado el dataset antes de decidir
 qué muestra bajar y cómo extraer la metadata de cada documento.
 
+Salidas (para que el notebook lea datos medidos, no números copiados):
+    data/eda/bucket_inventory.csv   una fila por archivo, metadata parseada de la ruta
+    data/eda/bucket_unparsed.csv    rutas que no siguen la convención de nombres
+
 Uso:
-    python explore_s3.py
+    python eda/explore_s3.py
 """
 
+import csv
 import os
 import re
 from collections import Counter, defaultdict
+from pathlib import Path
 
 import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
 from dotenv import load_dotenv
-from pathlib import Path
 
-# load_dotenv()
 load_dotenv(Path(__file__).parent / ".env")
 
 BUCKET = "anyoneai-datasets"
 PREFIX = "nasdaq_annual_reports/"
+
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "data" / "eda"
+
+# nasdaq_annual_reports/apple-inc/NASDAQ_AAPL_2019.pdf
+# Variante en 48 archivos: NASDAQ_ICUI_2016_<hash de 32 hex>.pdf
+KEY_PATTERN = re.compile(
+    r"^nasdaq_annual_reports/"
+    r"(?P<company>[^/]+)/"
+    r"(?P<exchange>[A-Za-z]+)_(?P<ticker>[^_/]+)_(?P<fiscal_year>\d{4})"
+    r"(?:_(?P<suffix>[0-9a-f]{32}))?\.pdf$",
+    re.IGNORECASE,
+)
 
 
 def get_client():
@@ -58,7 +75,46 @@ def listar_todo(client, limite=None):
     return objetos
 
 
-def analizar(objetos):
+def parsear(objetos):
+    """Separa las rutas que siguen la convención de las que no."""
+    filas, sueltas = [], []
+    for o in objetos:
+        m = KEY_PATTERN.match(o["key"])
+        if m:
+            filas.append({
+                "s3_key": o["key"],
+                "company": m["company"],
+                "exchange": m["exchange"].upper(),
+                "ticker": m["ticker"].upper(),
+                "fiscal_year": int(m["fiscal_year"]),
+                "size_mb": round(o["size"] / 1024**2, 3),
+                "has_hash_suffix": m["suffix"] is not None,
+            })
+        else:
+            sueltas.append({"s3_key": o["key"], "size_mb": round(o["size"] / 1024**2, 3)})
+    return filas, sueltas
+
+
+def guardar(filas, sueltas):
+    OUT.mkdir(parents=True, exist_ok=True)
+
+    inv_path = OUT / "bucket_inventory.csv"
+    with open(inv_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["s3_key", "company", "exchange", "ticker", "fiscal_year", "size_mb", "has_hash_suffix"])
+        w.writeheader()
+        w.writerows(filas)
+
+    sueltas_path = OUT / "bucket_unparsed.csv"
+    with open(sueltas_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["s3_key", "size_mb"])
+        w.writeheader()
+        w.writerows(sueltas)
+
+    print(f"\nGuardado: {inv_path.relative_to(ROOT)}  ({len(filas):,} filas)")
+    print(f"Guardado: {sueltas_path.relative_to(ROOT)}  ({len(sueltas):,} filas)")
+
+
+def analizar(objetos, filas, sueltas):
     total = len(objetos)
     peso_total = sum(o["size"] for o in objetos)
 
@@ -81,49 +137,48 @@ def analizar(objetos):
     for p, n in sorted(prof.items()):
         print(f"  {p} niveles        {n:>8,}")
 
-    # --- Primer nivel despues del prefijo ---
-    primer = Counter()
-    for o in objetos:
-        resto = o["key"][len(PREFIX):]
-        primer[resto.split("/")[0] if "/" in resto else "(archivos sueltos)"] += 1
-    print(f"\nPRIMER NIVEL ({len(primer):,} distintos)")
-    for k, n in primer.most_common(15):
-        print(f"  {k:<40} {n:>8,}")
-    if len(primer) > 15:
-        print(f"  ... y {len(primer) - 15:,} mas")
+    # --- Convención de nombres ---
+    print("\nCONVENCION DE NOMBRES")
+    print(f"  La siguen       {len(filas):>8,}")
+    print(f"  No la siguen    {len(sueltas):>8,}")
+    for s in sueltas[:10]:
+        print(f"    {s['s3_key']}")
+    if len(sueltas) > 10:
+        print(f"    ... y {len(sueltas) - 10:,} mas (ver bucket_unparsed.csv)")
 
-    # --- Muestra de nombres ---
-    print("\nMUESTRA DE RUTAS")
-    for o in objetos[:15]:
-        print(f"  {o['key']}  ({o['size'] / 1024**2:.1f} MB)")
+    # --- Empresas ---
+    empresas = {f["company"] for f in filas}
+    print(f"\nEMPRESAS DISTINTAS: {len(empresas):,}")
 
-    # --- Años detectados en los nombres ---
-    anios = Counter()
-    for o in objetos:
-        for a in re.findall(r"(19[89]\d|20[0-3]\d)", o["key"]):
-            anios[a] += 1
-    if anios:
-        print("\nAÑOS QUE APARECEN EN LAS RUTAS")
-        for a, n in sorted(anios.items()):
-            print(f"  {a}   {n:>8,}")
+    # --- Años: uno por archivo, tomado del nombre ---
+    anios = Counter(f["fiscal_year"] for f in filas)
+    print("\nAÑO FISCAL POR ARCHIVO")
+    for a, n in sorted(anios.items()):
+        print(f"  {a}   {n:>8,}")
+    print(f"  suma  {sum(anios.values()):>8,}")
 
-    # --- Empresas conocidas ---
-    objetivo = ["AAPL", "NVDA", "TSLA", "MSFT", "AMZN", "META", "INTC", "GOOGL", "AMD", "NFLX"]
-    print("\nEMPRESAS DE INTERES ENCONTRADAS")
-    encontradas = defaultdict(list)
-    for o in objetos:
-        up = o["key"].upper()
-        for t in objetivo:
-            if re.search(rf"[/_\-]{t}[/_\-.]", up):
-                encontradas[t].append(o["key"])
-    if encontradas:
-        for t in objetivo:
-            if t in encontradas:
-                print(f"  {t:<8} {len(encontradas[t]):>4} archivos   ej: {encontradas[t][0]}")
-    else:
-        print("  Ninguna por ticker. Puede que los nombres usen el nombre completo.")
+    # --- Sufijo hash ---
+    con_hash = sum(f["has_hash_suffix"] for f in filas)
+    print(f"\nCON SUFIJO HASH: {con_hash:,}")
 
-    return {"total": total, "peso_gb": peso_total / 1024**3}
+    # --- Duplicados: mismo ticker y año mas de una vez ---
+    pares = Counter((f["ticker"], f["fiscal_year"]) for f in filas)
+    dups = {k: n for k, n in pares.items() if n > 1}
+    print(f"\nDUPLICADOS ticker+año: {len(dups):,}")
+    for (t, a), n in list(dups.items())[:10]:
+        print(f"  {t} {a}  x{n}")
+
+    # --- Empresas de interes ---
+    objetivo = ["AAPL", "NVDA", "TSLA", "MSFT", "AMZN", "META", "FB", "INTC", "GOOGL", "GOOG", "AMD", "NFLX"]
+    por_ticker = defaultdict(list)
+    for f in filas:
+        por_ticker[f["ticker"]].append(f["fiscal_year"])
+    print("\nEMPRESAS DE INTERES")
+    for t in objetivo:
+        if t in por_ticker:
+            print(f"  {t:<8} {sorted(por_ticker[t])}")
+        else:
+            print(f"  {t:<8} no esta en el bucket")
 
 
 def main():
@@ -138,7 +193,10 @@ def main():
     if not objetos:
         print("No se encontro ningun objeto. Revisa el nombre del bucket y el prefijo.")
         return
-    analizar(objetos)
+
+    filas, sueltas = parsear(objetos)
+    analizar(objetos, filas, sueltas)
+    guardar(filas, sueltas)
     print("\nListo. Nada se descargo, solo se listo.")
 
 

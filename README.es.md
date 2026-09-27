@@ -77,14 +77,16 @@ Reportes anuales y 10-K de empresas listadas en el NASDAQ, alojados en S3 por An
 | Documentos | 9.855 PDF |
 | Peso total | 29,8 GB |
 | Peso promedio | 3,1 MB por documento |
-| Empresas | 2.429 |
-| Rango de años | 2015 a 2022, con densidad entre 2018 y 2021 |
+| Empresas | 2.428 |
+| Rango de años | 2003 a 2022, con casi el 80% entre 2018 y 2021 |
 
 ### Hallazgos que definieron el alcance
 
-**La metadata está en el nombre del archivo.** La ruta `nasdaq_annual_reports/apple-inc/NASDAQ_AAPL_2019.pdf` contiene empresa, bolsa, ticker y año. No hay que abrir el PDF para extraerlos.
+**La metadata está en el nombre del archivo.** La ruta `nasdaq_annual_reports/apple-inc/NASDAQ_AAPL_2019.pdf` contiene empresa, bolsa, ticker y año. No hay que abrir el PDF para extraerlos. La convención se cumple en 9.852 de 9.855 archivos; 45 de ellos traen un sufijo hash de 32 caracteres, y la única excepción es Fox Corporation.
 
-**El dataset se corta en 2021.** No hay documentos de 2023 en adelante, y 2022 tiene apenas 160 archivos contra los 2.237 de 2019. Por eso el alcance del proyecto son **2019, 2020 y 2021**.
+**La llave es el ticker, no la carpeta de la empresa.** 11 tickers aparecen dos veces para el mismo año, por errores de digitación en el nombre de la carpeta, cambios de nombre de la empresa o el mismo archivo subido con y sin hash. Los documentos se identifican por `ticker` + `fiscal_year` y se conserva un solo archivo por par.
+
+**El dataset se corta en 2021.** No hay documentos de 2023 en adelante, y 2022 tiene apenas 160 archivos contra los 2.236 de 2019. Por eso el alcance del proyecto son **2019, 2020 y 2021**.
 
 **Hay dos tipos de documento, no uno.** Unos archivos son el formulario 10-K de la SEC, con secciones Item numeradas. Otros son el Annual Report para accionistas, que no tiene esa estructura. En la muestra de trabajo, el 79% son 10-K.
 
@@ -96,7 +98,7 @@ Si alguien pregunta por un año fuera de rango, el bot lo dice en vez de callar 
 
 **Dentro:** 25 empresas reconocibles del NASDAQ, tres años fiscales, solo 10-K en inglés, búsqueda híbrida, respuesta con cita de empresa, año, sección y página, interfaz de chat, API, todo contenerizado, y un set de evaluación para medir la calidad.
 
-**Fuera:** las 2.429 empresas del dataset completo, búsqueda de noticias en internet, autenticación, gráficos, tablas financieras como datos estructurados, comparaciones entre varias empresas en una sola respuesta, cálculos aritméticos, y cualquier forma de recomendación de inversión.
+**Fuera:** las 2.428 empresas del dataset completo, búsqueda de noticias en internet, autenticación, gráficos, tablas financieras como datos estructurados, comparaciones entre varias empresas en una sola respuesta, cálculos aritméticos, y cualquier forma de recomendación de inversión.
 
 ### Qué tipo de preguntas responde
 
@@ -151,10 +153,12 @@ Abre `eda/.env` y pon las llaves de AWS que vienen en el brief del curso.
 ### Correr el EDA
 
 ```bash
-python eda/explore_s3.py          # explora el bucket, no descarga nada
+python eda/explore_s3.py          # explora el bucket, no descarga nada, guarda el inventario
 python eda/download_sample.py     # descarga la muestra de trabajo
 python eda/characterize.py        # caracteriza los documentos
 ```
+
+Después abre `eda/eda_filinglens.ipynb` y ejecuta todas las celdas. Los scripts miden y guardan en `data/eda/`; el notebook solo lee esos resultados, así que ninguna cifra está escrita a mano.
 
 El script de descarga es **determinista**: baja siempre exactamente los mismos archivos, sin importar quién lo corra. Así todo el equipo trabaja con la misma muestra y los resultados son comparables.
 

@@ -63,38 +63,61 @@ def get_client():
     )
 
 
+# NASDAQ_AAPL_2019.pdf, y la variante con sufijo hash que aparece en 45 archivos:
+# NASDAQ_ICUI_2016_be053643da474abb9e048daf1ac9aa5f.pdf
+# Es el mismo patrón que usa explore_s3.py.
+NOMBRE = re.compile(
+    r"^(?P<exchange>[A-Za-z]+)_(?P<ticker>[^_/]+)_(?P<anio>\d{4})"
+    r"(?:_(?P<sufijo>[0-9a-f]{32}))?\.pdf$",
+    re.IGNORECASE,
+)
+
+
 def listar_empresa(client, carpeta):
-    """Lista los archivos de una empresa. Devuelve {año: (key, size)}."""
-    encontrados = {}
+    """
+    Lista los archivos de una empresa. Devuelve {año: (key, size)}.
+
+    Si un año aparece dos veces (el mismo archivo subido con y sin hash),
+    se queda con el que no tiene hash, y si ambos lo tienen, con el primero
+    en orden alfabético. Así la elección es siempre la misma.
+    """
+    candidatos = {}
     paginator = client.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=BUCKET, Prefix=f"{PREFIX}{carpeta}/"):
         for obj in page.get("Contents", []):
             nombre = obj["Key"].split("/")[-1]
-            if nombre in IGNORAR or not nombre.lower().endswith(".pdf"):
+            if nombre in IGNORAR:
                 continue
-            # NASDAQ_AAPL_2019.pdf -> 2019
-            m = re.search(r"_(\d{4})\.pdf$", nombre, re.IGNORECASE)
+            m = NOMBRE.match(nombre)
             if not m:
                 continue
-            anio = int(m.group(1))
+            anio = int(m["anio"])
             if 1990 <= anio <= 2025:
-                encontrados[anio] = (obj["Key"], obj["Size"])
+                candidatos.setdefault(anio, []).append(
+                    (m["sufijo"] is not None, obj["Key"], obj["Size"])
+                )
+
+    encontrados = {}
+    for anio, opciones in candidatos.items():
+        opciones.sort()
+        if len(opciones) > 1:
+            print(f"      ojo: {carpeta} {anio} tiene {len(opciones)} archivos, se usa {opciones[0][1].split('/')[-1]}")
+        _, key, size = opciones[0]
+        encontrados[anio] = (key, size)
     return encontrados
 
 
 def parsear_metadata(key):
     """Saca empresa, exchange, ticker y año de la ruta. Sin abrir el PDF."""
     partes = key.split("/")
-    empresa = partes[-2]
-    nombre = partes[-1]
-    m = re.match(r"([A-Z]+)_([A-Z0-9.\-]+)_(\d{4})\.pdf$", nombre, re.IGNORECASE)
+    m = NOMBRE.match(partes[-1])
     if not m:
         return None
     return {
-        "empresa": empresa,
-        "exchange": m.group(1).upper(),
-        "ticker": m.group(2).upper(),
-        "anio": int(m.group(3)),
+        "empresa": partes[-2],
+        "exchange": m["exchange"].upper(),
+        "ticker": m["ticker"].upper(),
+        "anio": int(m["anio"]),
     }
 
 

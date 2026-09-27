@@ -1,6 +1,16 @@
+# Credenciales
 .env
+
+# Entorno y caches
 .venv/
 __pycache__/
 *.pyc
+.ipynb_checkpoints/
+
+# Datos: nunca van al repositorio
 data/
 *.pdf
+
+# Basura de sistema
+.DS_Store
+*Zone.Identifier
