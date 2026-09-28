@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Contract 4: API response",
+  "type": "object",
+  "properties": {
+    "answer": {"type": "string"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "company": {"type": "string"},
+          "fiscal_year": {"type": "integer"},
+          "section": {"type": "string"},
+          "page": {"type": "integer"},
+          "excerpt": {"type": "string"}
+        },
+        "required": ["company", "fiscal_year", "section", "page", "excerpt"],
+        "additionalProperties": false
+      }
+    },
+    "latency_ms": {"type": "integer", "minimum": 0}
+  },
+  "required": ["answer", "sources", "latency_ms"],
+  "additionalProperties": false
+}
