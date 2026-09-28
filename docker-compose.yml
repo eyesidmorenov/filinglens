@@ -1,5 +1,5 @@
 # FilingLens AI · servicios del proyecto
-# Hoy solo Elasticsearch. Cada carril agrega aquí su bloque: api, ui, etl.
+# Hoy: Elasticsearch y la API. Faltan por agregar: ui (Chainlit) y etl.
 
 services:
   elasticsearch:
@@ -18,6 +18,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+
+  api:
+    build: ./api                          # usa el Dockerfile de api/
+    container_name: filinglens-api
+    environment:
+      # Dentro de la red de Compose, Elasticsearch se llama por el nombre del servicio,
+      # no por localhost. Haystack leerá esta variable cuando se conecte.
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy        # la API arranca solo cuando Elasticsearch está listo
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
 volumes:
   es_data:
