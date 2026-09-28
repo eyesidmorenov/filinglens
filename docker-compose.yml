@@ -1,5 +1,5 @@
 # FilingLens AI · servicios del proyecto
-# Hoy: Elasticsearch y la API. Faltan por agregar: ui (Chainlit) y etl.
+# Hoy: Elasticsearch, la API y el ETL. Falta por agregar: ui (Chainlit).
 
 services:
   elasticsearch:
@@ -36,6 +36,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 6
+
+  etl:
+    build: ./etl
+    container_name: filinglens-etl
+    profiles: ["etl"]                     # corre solo a pedido: docker compose --profile etl run --rm etl
+    volumes:
+      - ./data:/app/data                  # lee data/raw, escribe data/clean y data/chunks
 
 volumes:
   es_data:
