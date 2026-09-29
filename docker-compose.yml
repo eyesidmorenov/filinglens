@@ -1,0 +1,16 @@
+services:
+  api:
+    build: ./api
+    container_name: financial-api
+    ports:
+      - "8000:8000"
+
+  ui:
+    build: ./ui
+    container_name: financial-ui
+    ports:
+      - "8001:8001"
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      - api
