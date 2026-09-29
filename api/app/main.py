@@ -12,7 +12,7 @@ class Source(BaseModel):
     company: str
     ticker: str
     fiscal_year: int
-    ssection: str | None = None
+    section: str | None = None
     page: int
     excerpt: str
 

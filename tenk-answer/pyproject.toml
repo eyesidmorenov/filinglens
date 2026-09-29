@@ -1,0 +1,55 @@
+[project]
+name = "tenk-answer"
+version = "0.1.0"
+description = "Answer generation with citations over retrieved 10-K chunks (Haystack + Claude)"
+readme = "README.md"
+authors = [
+    { name = "Juan Correa", email = "juan.correa.herrera@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=1.9.0",
+    "anthropic-haystack>=6.2.0",
+    "haystack-ai>=3.2.0",
+    "pydantic>=2.13.5",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.29,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "jsonschema>=4.26.0",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "ruff>=0.16.9",
+    "types-jsonschema>=4.26.0.20260518",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+addopts = "-m 'not integration'"
+markers = ["integration: hits the real Anthropic API; needs ANTHROPIC_API_KEY"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.format]
+exclude = ["*.md"]  # leave docs alone
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["haystack.utils.Secret.from_env_var"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["haystack_integrations.*"]
+ignore_missing_imports = true

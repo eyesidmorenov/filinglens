@@ -14,3 +14,4 @@ data/
 # Basura de sistema
 .DS_Store
 *Zone.Identifier
+venv/
