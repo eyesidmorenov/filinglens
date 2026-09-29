@@ -33,4 +33,8 @@ async def main(message: cl.Message):
         lines = [f"- {s['ticker']} {s['fiscal_year']} · {s.get('section') or 'sin sección'} · pág. {s['page']}" for s in sources]
         answer += "\n\n**Fuentes:**\n" + "\n".join(lines)
 
+    latency = data.get("latency_ms")
+    if latency is not None:
+        answer += f"\n\n_Tiempo de respuesta: {latency} ms_"
+
     await cl.Message(content=answer).send()
