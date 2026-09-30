@@ -1,16 +1,16 @@
 # FilingLens AI · servicios del proyecto
-# Hoy: Elasticsearch, la API y el ETL. Falta por agregar: ui (Chainlit).
+# Hoy: Elasticsearch, la API, la UI (Chainlit) y el ETL.
 
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
     container_name: filinglens-es
     environment:
-      - discovery.type=single-node        # un solo nodo, sin clúster
-      - xpack.security.enabled=false      # sin usuario ni clave, solo para desarrollo local
-      - ES_JAVA_OPTS=-Xms1g -Xmx1g        # 1 GB de memoria para Elasticsearch
+      - discovery.type=single-node       # un solo nodo, sin clúster
+      - xpack.security.enabled=false     # sin usuario ni clave, solo para desarrollo local
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g       # 1 GB de memoria para Elasticsearch
     ports:
-      - "127.0.0.1:9200:9200"             # solo accesible desde tu máquina
+      - "127.0.0.1:9200:9200"            # solo accesible desde tu máquina
     volumes:
       - es_data:/usr/share/elasticsearch/data   # los datos sobreviven si se apaga
     healthcheck:
@@ -20,7 +20,7 @@ services:
       retries: 12
 
   api:
-    build: ./api                          # usa el Dockerfile de api/
+    build: ./api                         # usa el Dockerfile de api/
     container_name: filinglens-api
     environment:
       # Dentro de la red de Compose, Elasticsearch se llama por el nombre del servicio,
@@ -30,19 +30,31 @@ services:
       - "127.0.0.1:8000:8000"
     depends_on:
       elasticsearch:
-        condition: service_healthy        # la API arranca solo cuando Elasticsearch está listo
+        condition: service_healthy       # la API arranca solo cuando Elasticsearch está listo
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
       timeout: 5s
       retries: 6
 
+  ui:
+    build: ./ui                          # usa el Dockerfile de ui/
+    container_name: filinglens-ui
+    environment:
+      # Chainlit llama a la API por el nombre del servicio, no por localhost.
+      - API_URL=http://api:8000
+    ports:
+      - "127.0.0.1:8001:8001"
+    depends_on:
+      api:
+        condition: service_healthy       # la UI arranca solo cuando la API está lista
+
   etl:
     build: ./etl
     container_name: filinglens-etl
-    profiles: ["etl"]                     # corre solo a pedido: docker compose --profile etl run --rm etl
+    profiles: ["etl"]                    # corre solo a pedido: docker compose --profile etl run --rm etl
     volumes:
-      - ./data:/app/data                  # lee data/raw, escribe data/clean y data/chunks
+      - ./data:/app/data                 # lee data/raw, escribe data/clean y data/chunks
 
 volumes:
   es_data:
