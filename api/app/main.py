@@ -8,9 +8,9 @@ class Question(BaseModel):
     question: str
 
 class Source(BaseModel):
-    doc_id: str
+    doc_id: str | None = None
     company: str
-    ticker: str
+    ticker: str | None = None
     fiscal_year: int
     section: str | None = None
     page: int

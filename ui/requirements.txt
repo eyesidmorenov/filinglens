@@ -1,3 +1,3 @@
 chainlit==2.12.0
 httpx==0.28.1
-requests==2.34.2
+requests==2.34.2  # requerido por una dependencia de Chainlit; sin él, Chainlit no arranca

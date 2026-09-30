@@ -15,3 +15,8 @@ data/
 .DS_Store
 *Zone.Identifier
 venv/
+
+# Chainlit: solo traducciones en español e inglés
+ui/.chainlit/translations/*
+!ui/.chainlit/translations/es.json
+!ui/.chainlit/translations/en-US.json

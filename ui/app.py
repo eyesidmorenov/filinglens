@@ -8,7 +8,10 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 @cl.on_chat_start
 async def start():
     await cl.Message(
-        content="Hola 👋 Soy tu asesor financiero. Pregúntame sobre las empresas del NASDAQ."
+        content=(
+            "Hi 👋 I'm your financial advisor. Ask me about NASDAQ companies.\n\n"
+            "Hola 👋 Soy tu asesor financiero. Pregúntame sobre las empresas del NASDAQ."
+        )
     ).send()
 
 
@@ -30,7 +33,7 @@ async def main(message: cl.Message):
     answer = data["answer"]
     sources = data.get("sources", [])
     if sources:
-        lines = [f"- {s['ticker']} {s['fiscal_year']} · {s.get('section') or 'sin sección'} · pág. {s['page']}" for s in sources]
+        lines = [f"- {s.get('ticker') or s['company']} {s['fiscal_year']} · {s.get('section') or 'sin sección'} · pág. {s['page']}" for s in sources]
         answer += "\n\n**Fuentes:**\n" + "\n".join(lines)
 
     latency = data.get("latency_ms")
