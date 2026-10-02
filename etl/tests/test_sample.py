@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from src.extract import extract_document
+from src.extract import OutOfScopeError, extract_document
 from src.metadata import load_inventory, metadata_for
 
 DATA = Path(os.environ.get("DATA_DIR", Path(__file__).resolve().parents[2] / "data"))
@@ -31,8 +31,16 @@ def test_sample_document_types(name: str, expected: str):
     pdf = RAW / name
     if not pdf.exists():
         pytest.skip(f"{name} not in the sample")
-    doc = extract_document(pdf, metadata_for(pdf, load_inventory(RAW / "inventario.csv")))
+    doc = extract_document(pdf, metadata_for(pdf, load_inventory(RAW / "inventario.csv")), scope="all")
     assert doc.doc_type == expected
+
+
+def test_investor_only_report_is_skipped_in_10k_scope():
+    pdf = RAW / "MSFT_2020.pdf"
+    if not pdf.exists():
+        pytest.skip("MSFT_2020 not in the sample")
+    with pytest.raises(OutOfScopeError):
+        extract_document(pdf, metadata_for(pdf, {}), scope="10k")
 
 
 def test_tesla_exhibits_are_dropped():

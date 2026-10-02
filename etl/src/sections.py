@@ -12,7 +12,9 @@ SEC Rule 12b-13. Two traps:
 
 import re
 
-ITEM_HEADING = re.compile(r"^\s*ITEM\s+(\d{1,2}[A-C]?)\s*(?:[.:\-–—]|\s|$)", re.IGNORECASE)
+# "Item 1A. Risk Factors", "ITEM 7:", "Item 8" alone, or "Item 2 Properties";
+# but not a sentence that starts with a reference, like "Item 7 of this Form 10-K"
+ITEM_HEADING = re.compile(r"^\s*(?:ITEM|Item)\s+(\d{1,2}[A-Ca-c]?)\s*(?:[.:\-–—]|$|\|\s*[A-Z]|[A-Z])")
 # A page listing this many distinct Items is a table of contents or an index
 TOC_MIN_ITEMS = 4
 

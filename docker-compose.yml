@@ -53,8 +53,27 @@ services:
     build: ./etl
     container_name: filinglens-etl
     profiles: ["etl"]                    # corre solo a pedido: docker compose --profile etl run --rm etl
+    environment:
+      - TOKENIZER_MODEL=BAAI/bge-base-en-v1.5   # mide los chunks en tokens del mismo modelo del índice
     volumes:
       - ./data:/app/data                 # lee data/raw, escribe data/clean y data/chunks
+      - hf_models:/root/.cache/huggingface   # el tokenizador se descarga una sola vez
+
+  index:
+    build: ./index
+    container_name: filinglens-index
+    profiles: ["index"]                  # corre solo a pedido: docker compose --profile index run --rm index
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - EMBEDDING_MODEL=BAAI/bge-base-en-v1.5
+      - EMBEDDING_DIMS=768
+    volumes:
+      - ./data:/app/data                 # lee data/chunks, cachea los embeddings en data/embeddings
+      - hf_models:/root/.cache/huggingface   # el modelo BGE se descarga una sola vez
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
 
 volumes:
   es_data:
+  hf_models:

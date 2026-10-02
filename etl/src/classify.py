@@ -11,6 +11,7 @@ after it is exhibits (for Tesla, hundreds of pages of credit agreements).
 """
 
 import re
+from datetime import date, datetime
 
 COVER = re.compile(
     r"SECURITIES\s+AND\s+EXCHANGE\s+COMMISSION.{0,400}?FORM\s+10-K", re.IGNORECASE | re.DOTALL
@@ -35,6 +36,40 @@ def find_signatures(page_texts: list[str], start: int) -> int | None:
         if SIGNATURES.search(page_texts[i]):
             return i + 1
     return None
+
+
+FISCAL_YEAR_END = re.compile(
+    r"for\s+the\s+fiscal\s+year\s+ended:?\s+([A-Z][a-z]+)\s+(\d{1,2})\s*,?\s*(\d{4})", re.IGNORECASE
+)
+
+
+def fiscal_year_end(cover_text: str) -> date | None:
+    """'For the fiscal year ended September 28, 2019' on the 10-K cover -> date(2019, 9, 28)."""
+    flat = " ".join(cover_text.replace(" | ", " ").split())
+    m = FISCAL_YEAR_END.search(flat)
+    if not m:
+        return None
+    month, day, year = m.groups()
+    try:
+        return datetime.strptime(f"{month[:3]} {day} {year}", "%b %d %Y").date()
+    except ValueError:
+        return None
+
+
+def year_check(file_year: int, end: date | None) -> str:
+    """
+    Compare the year in the file name with the fiscal year end on the cover.
+    'ok' when they match; 'check' when the year ends in January or February of
+    the next year (retailers often name that fiscal year after the previous
+    one); 'mismatch' otherwise; 'not found' when the cover has no date.
+    """
+    if end is None:
+        return "not found"
+    if end.year == file_year:
+        return "ok"
+    if end.year == file_year + 1 and end.month <= 2:
+        return "check"
+    return "mismatch"
 
 
 def classify(page_texts: list[str]) -> tuple[str, tuple[int, int] | None]:
