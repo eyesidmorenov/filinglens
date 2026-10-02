@@ -9,6 +9,7 @@ Fields marked PROPOSED were suggested to the team and are optional until the
 contracts are approved; consumers that don't know them can ignore them.
 """
 
+from datetime import date
 from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -42,6 +43,9 @@ class Document(BaseModel):
     doc_type: Optional[DocType] = None
     form_10k_pages: Optional[tuple[int, int]] = None
     pages: list[Page] = Field(default_factory=list)
+    # Internal to this lane (contract 1 is produced and consumed only by the ETL)
+    fiscal_year_end: Optional[date] = Field(default=None, description="From the 10-K cover")
+    etl_fingerprint: Optional[str] = Field(default=None, description="Code and settings that produced it")
 
 
 class Chunk(BaseModel):

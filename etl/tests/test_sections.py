@@ -34,6 +34,17 @@ def test_reference_inside_a_sentence_is_not_a_heading():
     assert label_lines(pages) == [["Item 1", "Item 1"]]
 
 
+def test_sentence_starting_with_an_item_reference_is_not_a_heading():
+    pages = [["Item 1. Business", "Item 7 of this Form 10-K under the heading MD&A.", "We design phones."]]
+    assert label_lines(pages) == [["Item 1", "Item 1", "Item 1"]]
+
+
+def test_heading_variants():
+    for line in ["Item 1A. Risk Factors", "ITEM 7: MANAGEMENT'S DISCUSSION", "Item 8", "Item 2 | Properties",
+                 "Item 9B Other Information"]:
+        assert label_lines([[line]])[0][0].startswith("Item"), line
+
+
 def test_captions_map_to_items_when_no_numbered_headings():
     assert caption_item("MANAGEMENT’S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION") == "Item 7"
     assert caption_item("FINANCIAL STATEMENTS AND SUPPLEMENTARY DATA") == "Item 8"
