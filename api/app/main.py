@@ -35,14 +35,14 @@ def ask(payload: Question):
             company="apple-inc",
             ticker="AAPL",
             fiscal_year=2019,
-            section="Item 7",
+            section="Unknown",
             page=42,
             excerpt="Total net sales decreased 2% or $5.4 billion during 2019...",
         )
     ]
     latency_ms = int((time.perf_counter() - start) * 1000)
     return Answer(
-        answer=f"Respuesta de prueba a: {payload.question}",
+        answer=f"Test answer to: {payload.question}",
         sources=sources,
         latency_ms=latency_ms,
     )
