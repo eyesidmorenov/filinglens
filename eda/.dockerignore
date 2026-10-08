@@ -1,0 +1,4 @@
+# Las llaves nunca entran a la imagen
+.env
+.ipynb_checkpoints/
+__pycache__/

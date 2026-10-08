@@ -1,5 +1,5 @@
 # FilingLens AI · servicios del proyecto
-# Hoy: Elasticsearch, la API, la UI (Chainlit) y el ETL.
+# Hoy: Elasticsearch, la API, la UI (Chainlit), el EDA, el ETL y el índice.
 
 services:
   elasticsearch:
@@ -48,6 +48,16 @@ services:
     depends_on:
       api:
         condition: service_healthy       # la UI arranca solo cuando la API está lista
+
+  eda:
+    build: ./eda
+    container_name: filinglens-eda
+    profiles: ["eda"]                    # corre solo a pedido: docker compose --profile eda up eda
+    ports:
+      - "127.0.0.1:8888:8888"            # Jupyter, solo accesible desde tu máquina
+    volumes:
+      - ./eda:/app/eda                   # el notebook y el .env se leen desde tu carpeta, y los cambios se guardan ahí
+      - ./data:/app/data                 # los scripts escriben data/eda y data/raw en tu máquina
 
   etl:
     build: ./etl
