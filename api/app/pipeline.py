@@ -10,14 +10,13 @@ def search(question: str) -> list[dict]:
     # TODO: reemplazar por la búsqueda de José Luis
     return [
         {
-            "chunk_id": "AAPL_2024_10K_p21_c1",
-            "text": "Total net sales were $391,035 million for fiscal 2024, "
-            "compared to $383,285 million for fiscal 2023.",
+            "chunk_id": "AAPL_2019_10K_p32_c1",
+            "text": "Total net sales were $260,174 million for fiscal 2019.",
             "score": 0.86,
-            "section": "Item 7",
-            "page": 21,
+            "section": "Item 8",
+            "page": 32,
             "company": "Apple Inc.",
-            "fiscal_year": 2024,
+            "fiscal_year": 2019,
         }
     ]
 
