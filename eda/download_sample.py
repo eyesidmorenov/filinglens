@@ -125,7 +125,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true",
                     help="solo verifica cobertura, no descarga nada")
+    ap.add_argument("--companies", type=Path,
+                    help="CSV con columnas company,ticker (ej. eda/companies.csv). Sin esto, usa la muestra de 5")
     args = ap.parse_args()
+
+    global EMPRESAS
+    if args.companies:
+        with open(args.companies, encoding="utf-8") as f:
+            EMPRESAS = {fila["company"]: fila["ticker"] for fila in csv.DictReader(f)}
+        print(f"Empresas leídas de {args.companies}")
 
     client = get_client()
     DESTINO.mkdir(parents=True, exist_ok=True)
