@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from app.pipeline import answer_question
 import time
 
 app = FastAPI(title="Financial Advisor Chatbot API")
@@ -25,24 +26,14 @@ class Answer(BaseModel):
 def health():
     return {"status": "ok"}
 
-@app.post("/ask", response_model=Answer)
+@app.post("/ask", response_model=Answer, response_model_exclude_none=True)
 def ask(payload: Question):
     start = time.perf_counter()
-    # MOCK: luego se reemplaza por el pipeline de Haystack
-    sources = [
-        Source(
-            doc_id="AAPL_2019_10K",
-            company="apple-inc",
-            ticker="AAPL",
-            fiscal_year=2019,
-            section="Item 7",
-            page=42,
-            excerpt="Total net sales decreased 2% or $5.4 billion during 2019...",
-        )
-    ]
+    result = answer_question(payload.question)
+    # Latencia total (búsqueda + generación). Pendiente confirmar con el equipo.
     latency_ms = int((time.perf_counter() - start) * 1000)
     return Answer(
-        answer=f"Respuesta de prueba a: {payload.question}",
-        sources=sources,
+        answer=result["answer"],
+        sources=result["sources"],
         latency_ms=latency_ms,
     )
