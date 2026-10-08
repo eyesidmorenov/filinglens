@@ -1,16 +1,16 @@
 """
-Elige las empresas candidatas para pasar de la muestra a 25 empresas.
+Picks the candidate companies to move from the sample to 25 companies.
 
-Lee el inventario que ya midió explore_s3.py (no consulta S3) y se queda con las
-empresas que tienen los tres años del alcance, 2019, 2020 y 2021, priorizando las
-más conocidas del NASDAQ. Saca más de 25 a propósito: el ETL descarta las que no
-traen 10-K (como pasó con Microsoft), y nos quedamos con las primeras 25 que pasen.
+It reads the inventory already measured by explore_s3.py (no S3 calls) and keeps
+the companies that have the three years in scope, 2019, 2020 and 2021, prioritizing
+the best-known NASDAQ names. It picks more than 25 on purpose: the ETL drops the
+ones without a 10-K (as happened with Microsoft), and we keep the first 25 that pass.
 
-Entrada:  data/eda/bucket_inventory.csv
-Salida:   eda/companies.csv   (versionado en Git: la lista es una decisión del proyecto)
+Input:   data/eda/bucket_inventory.csv
+Output:  eda/companies.csv   (versioned in Git: the list is a project decision)
 
-Uso:
-    python eda/select_companies.py              # 35 candidatas
+Usage:
+    python eda/select_companies.py              # 35 candidates
     python eda/select_companies.py --n 30
 """
 
@@ -20,14 +20,14 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-INVENTARIO = ROOT / "data" / "eda" / "bucket_inventory.csv"
-SALIDA = Path(__file__).parent / "companies.csv"
+INVENTORY = ROOT / "data" / "eda" / "bucket_inventory.csv"
+OUTPUT = Path(__file__).parent / "companies.csv"
 
-ANIOS = {2019, 2020, 2021}
+YEARS = {2019, 2020, 2021}
 
-# Empresas conocidas del NASDAQ, en orden de prioridad (las del Nasdaq-100 de esos años).
-# Solo empresas de EE. UU.: las extranjeras (ASML, JD, Baidu...) presentan 20-F, no 10-K.
-CONOCIDAS = [
+# Well-known NASDAQ companies, in priority order (Nasdaq-100 members in those years).
+# US companies only: foreign ones (ASML, JD, Baidu...) file a 20-F, not a 10-K.
+KNOWN = [
     "AAPL", "MSFT", "AMZN", "GOOGL", "GOOG", "FB", "META", "TSLA", "NVDA", "INTC",
     "PYPL", "ADBE", "NFLX", "CSCO", "CMCSA", "PEP", "COST", "AVGO", "QCOM", "TXN",
     "AMD", "AMGN", "SBUX", "INTU", "TMUS", "ISRG", "BKNG", "GILD", "MDLZ", "MU",
@@ -42,47 +42,47 @@ CONOCIDAS = [
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--n", type=int, default=35, help="cuántas candidatas sacar")
+    ap.add_argument("--n", type=int, default=35, help="how many candidates to pick")
     args = ap.parse_args()
 
-    if not INVENTARIO.exists():
-        raise SystemExit(f"No encuentro {INVENTARIO.relative_to(ROOT)}. Corre primero: python eda/explore_s3.py")
+    if not INVENTORY.exists():
+        raise SystemExit(f"Can't find {INVENTORY.relative_to(ROOT)}. Run first: python eda/explore_s3.py")
 
-    anios = defaultdict(set)
+    years = defaultdict(set)
     tickers = defaultdict(set)
-    peso = defaultdict(float)
-    with open(INVENTARIO, encoding="utf-8") as f:
-        for fila in csv.DictReader(f):
-            anio = int(fila["fiscal_year"])
-            if anio in ANIOS:
-                anios[fila["company"]].add(anio)
-                tickers[fila["company"]].add(fila["ticker"].upper())
-                peso[fila["company"]] += float(fila["size_mb"])
+    size = defaultdict(float)
+    with open(INVENTORY, encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            year = int(row["fiscal_year"])
+            if year in YEARS:
+                years[row["company"]].add(year)
+                tickers[row["company"]].add(row["ticker"].upper())
+                size[row["company"]] += float(row["size_mb"])
 
-    completas = [c for c in anios if ANIOS <= anios[c]]
-    prioridad = {t: i for i, t in enumerate(CONOCIDAS)}
+    complete = [c for c in years if YEARS <= years[c]]
+    priority = {t: i for i, t in enumerate(KNOWN)}
 
-    def rango(empresa):
-        return min((prioridad[t] for t in tickers[empresa] if t in prioridad), default=None)
+    def rank(company):
+        return min((priority[t] for t in tickers[company] if t in priority), default=None)
 
-    conocidas = sorted((c for c in completas if rango(c) is not None), key=lambda c: (rango(c), c))
-    elegidas = conocidas[: args.n]
+    known = sorted((c for c in complete if rank(c) is not None), key=lambda c: (rank(c), c))
+    chosen = known[: args.n]
 
-    with open(SALIDA, "w", newline="", encoding="utf-8") as f:
+    with open(OUTPUT, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, lineterminator="\n")
         w.writerow(["rank", "company", "ticker", "size_mb_2019_2021"])
-        for i, c in enumerate(elegidas, 1):
-            ticker = next(t for t in sorted(tickers[c]) if t in prioridad)
-            w.writerow([i, c, ticker, round(peso[c], 1)])
+        for i, c in enumerate(chosen, 1):
+            ticker = next(t for t in sorted(tickers[c]) if t in priority)
+            w.writerow([i, c, ticker, round(size[c], 1)])
 
-    print(f"Empresas en el inventario:              {len(anios):,}")
-    print(f"Con los tres años 2019, 2020 y 2021:    {len(completas):,}")
-    print(f"De esas, conocidas del NASDAQ:          {len(conocidas):,}")
-    print(f"Candidatas guardadas en {SALIDA.relative_to(ROOT)}: {len(elegidas)}")
-    for i, c in enumerate(elegidas, 1):
+    print(f"Companies in the inventory:             {len(years):,}")
+    print(f"With the three years 2019, 2020, 2021:  {len(complete):,}")
+    print(f"Of those, well-known NASDAQ names:      {len(known):,}")
+    print(f"Candidates saved to {OUTPUT.relative_to(ROOT)}: {len(chosen)}")
+    for i, c in enumerate(chosen, 1):
         print(f"  {i:>2}. {c:<36} {', '.join(sorted(tickers[c]))}")
-    if len(elegidas) < args.n:
-        print(f"\nOjo: solo hay {len(elegidas)} candidatas conocidas con los tres años.")
+    if len(chosen) < args.n:
+        print(f"\nNote: there are only {len(chosen)} well-known candidates with the three years.")
 
 
 if __name__ == "__main__":
