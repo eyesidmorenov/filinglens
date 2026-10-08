@@ -160,6 +160,15 @@ python eda/characterize.py        # measures the documents
 
 Then open `eda/eda_filinglens.ipynb` and run all cells. The scripts measure and write to `data/eda/`; the notebook only reads those results, so no figure in it is typed by hand.
 
+**With Docker**, nothing to install but Docker. With `eda/.env` in place, from the project root:
+
+```bash
+docker compose --profile eda run --rm eda python eda/explore_s3.py   # same for the other two scripts
+docker compose --profile eda up eda                                  # notebook at http://localhost:8888
+```
+
+Results land in your `data/` folder and notebook changes are saved in `eda/`. The `.env` never enters the image.
+
 The download script is **deterministic**: it always fetches exactly the same files, regardless of who runs it. That way the whole team works from an identical sample and results are comparable.
 
 ---

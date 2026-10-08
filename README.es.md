@@ -160,6 +160,15 @@ python eda/characterize.py        # caracteriza los documentos
 
 Después abre `eda/eda_filinglens.ipynb` y ejecuta todas las celdas. Los scripts miden y guardan en `data/eda/`; el notebook solo lee esos resultados, así que ninguna cifra está escrita a mano.
 
+**Con Docker**, sin instalar nada más que Docker. Con el `eda/.env` ya creado, desde la raíz del proyecto:
+
+```bash
+docker compose --profile eda run --rm eda python eda/explore_s3.py   # igual para los otros dos scripts
+docker compose --profile eda up eda                                  # notebook en http://localhost:8888
+```
+
+Los resultados quedan en tu carpeta `data/` y los cambios al notebook se guardan en `eda/`. El `.env` nunca entra a la imagen.
+
 El script de descarga es **determinista**: baja siempre exactamente los mismos archivos, sin importar quién lo corra. Así todo el equipo trabaja con la misma muestra y los resultados son comparables.
 
 ---
