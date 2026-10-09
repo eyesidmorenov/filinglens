@@ -8,9 +8,16 @@ SEC Rule 12b-13. Two traps:
   - some filers don't use numbered headings (Microsoft's investor report,
     Intel's reordered 10-K). For them, known captions are mapped to the Item
     they correspond to; anything else stays "Unknown".
+
+Some filers (Qualcomm, Amgen, Dexcom) place the financial statements after the
+signature page, where the last heading seen is "Item 16. Form 10-K Summary".
+Their first caption there ("Report of Independent Registered Public Accounting
+Firm" or "Index to Consolidated Financial Statements") switches back to Item 8.
 """
 
 import re
+
+from .classify import SIGNATURE_STATEMENT, flatten
 
 # "Item 1A. Risk Factors", "ITEM 7:", "Item 8" alone, or "Item 2 Properties";
 # but not a sentence that starts with a reference, like "Item 7 of this Form 10-K"
@@ -29,6 +36,11 @@ CAPTION_TO_ITEM = [
     (re.compile(r"^PROPERTIES$", re.I), "Item 2"),
     (re.compile(r"^BUSINESS$", re.I), "Item 1"),
 ]
+
+FINANCIAL_STATEMENTS_START = re.compile(
+    r"^(?:REPORT OF INDEPENDENT REGISTERED PUBLIC ACCOUNTING FIRMS?|INDEX TO (?:THE )?(?:CONSOLIDATED )?FINANCIAL STATEMENTS)$",
+    re.I,
+)
 
 UNKNOWN = "Unknown"
 
@@ -59,12 +71,15 @@ def label_lines(pages: list[list[str]]) -> list[list[str]]:
         ITEM_HEADING.match(l) for lines in pages if not is_toc_page(lines) for l in lines
     )
     current = UNKNOWN
+    signed = False
     labels = []
     for lines in pages:
         toc = is_toc_page(lines)
         page_labels = []
         for line in lines:
-            if not toc:
+            if signed and FINANCIAL_STATEMENTS_START.match(line.split(" | ")[0].strip()):
+                current = "Item 8"
+            elif not toc:
                 if has_items:
                     m = ITEM_HEADING.match(line)
                     if m:
@@ -73,4 +88,6 @@ def label_lines(pages: list[list[str]]) -> list[list[str]]:
                     current = caption_item(line) or current
             page_labels.append(current)
         labels.append(page_labels)
+        # Pages after the signature page can only hold exhibits or the financial statements
+        signed = signed or bool(SIGNATURE_STATEMENT.search(flatten("\n".join(lines))))
     return labels

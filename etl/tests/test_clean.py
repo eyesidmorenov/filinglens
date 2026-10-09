@@ -1,8 +1,13 @@
 from src.clean import clean_pages, is_page_number, join_hyphenated, normalize_whitespace
 
 
-def test_join_hyphenated_word_split_across_lines():
-    assert join_hyphenated("our manu-\nfacturing partners") == "our manufacturing partners"
+def test_compound_word_split_across_lines_keeps_its_hyphen():
+    assert join_hyphenated("our long-\nterm debt") == "our long-term debt"
+    assert join_hyphenated("this Form 10-\nK and COVID-\n19") == "this Form 10-K and COVID-19"
+
+
+def test_hyphen_inside_a_line_is_untouched():
+    assert join_hyphenated("third-party\nvendors") == "third-party\nvendors"
 
 
 def test_page_numbers():

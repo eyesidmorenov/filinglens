@@ -52,3 +52,26 @@ def test_captions_map_to_items_when_no_numbered_headings():
     assert caption_item("Business") is None  # captions are all caps
     pages = [["Dear shareholders"], ["BUSINESS", "We make software."], ["INCOME STATEMENTS"]]
     assert label_lines(pages) == [[UNKNOWN], ["Item 1", "Item 1"], ["Item 1"]]
+
+
+def test_financial_statements_after_the_signatures_go_back_to_item_8():
+    # Qualcomm: Item 8 points to the F-pages, which come after the signature page
+    pages = [
+        ["Item 8. Financial Statements and Supplementary Data", "See pages F-1 through F-44."],
+        ["Item 16. Form 10-K Summary", "None."],
+        ["SIGNATURES", "Pursuant to the requirements of Section 13 or 15(d) of the Securities Exchange Act of 1934,"],
+        ["Report of Independent Registered Public Accounting Firm", "We have audited the consolidated balance sheets.", "F-1"],
+        ["CONSOLIDATED BALANCE SHEETS", "Total assets | 32,957", "F-2"],
+    ]
+    labels = label_lines(pages)
+    assert labels[1] == ["Item 16", "Item 16"]
+    assert set(labels[3]) == {"Item 8"}
+    assert set(labels[4]) == {"Item 8"}
+
+
+def test_auditor_report_before_the_signatures_keeps_its_item():
+    # Item 9A often carries the auditor's report on internal control
+    pages = [
+        ["Item 9A. Controls and Procedures", "Report of Independent Registered Public Accounting Firm", "We have audited."],
+    ]
+    assert set(label_lines(pages)[0]) == {"Item 9A"}

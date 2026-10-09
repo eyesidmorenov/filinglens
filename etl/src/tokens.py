@@ -31,6 +31,12 @@ def _tokenizer():
     return Tokenizer.from_pretrained(TOKENIZER_MODEL)
 
 
+@lru_cache(maxsize=1)
+def vocabulary() -> frozenset[str]:
+    """Whole words the tokenizer knows (lowercase; word pieces like '##ing' left out)."""
+    return frozenset(w for w in _tokenizer().get_vocab() if not w.startswith("##"))
+
+
 @lru_cache(maxsize=200_000)
 def word_tokens(word: str) -> int:
     return len(_tokenizer().encode(word, add_special_tokens=False).ids)

@@ -15,6 +15,10 @@ Outputs:
     data/chunks/<doc_id>.jsonl    contract 2, one chunk per line
     data/chunks/_stats.csv        one row per document in scope (up to date or redone), for the team
     data/clean/_skipped.csv       documents not processed in the last run, and why
+
+data/clean and data/chunks mirror data/raw: on a full run (no --limit), the
+outputs of PDFs that are no longer in data/raw are removed, so a company taken
+out of the selection never reaches the index.
 """
 
 import argparse
@@ -27,7 +31,7 @@ from pathlib import Path
 
 from .chunk import chunk_document
 from .classify import year_check
-from .extract import OutOfScopeError, ScannedDocumentError, extract_document
+from .extract import SkippedDocument, extract_document
 from .metadata import load_inventory, metadata_for
 from .models import Chunk, Document
 from .tokens import TOKENIZER_MODEL
@@ -71,6 +75,12 @@ def write_atomic(path: Path, text: str) -> None:
 def remove_outputs(*paths: Path) -> None:
     for p in paths:
         p.unlink(missing_ok=True)
+
+
+def orphan_outputs(clean_dir: Path, chunk_dir: Path, doc_ids: set[str]) -> list[Path]:
+    """Outputs of documents whose PDF is not in data/raw anymore."""
+    found = [*clean_dir.glob("*.json"), *chunk_dir.glob("*.jsonl")]
+    return sorted(p for p in found if p.stem not in doc_ids)
 
 
 def document_stats(doc: Document, chunks: list[Chunk]) -> dict:
@@ -145,12 +155,11 @@ def main(argv: list[str] | None = None) -> int:
 
         try:
             doc = extract_document(pdf, meta, scope=args.scope, fingerprint=current)
-        except (ScannedDocumentError, OutOfScopeError) as e:
-            reason = "scanned" if isinstance(e, ScannedDocumentError) else "out of scope"
-            skipped.append({"file": pdf.name, "reason": f"{reason}: {e}"})
+        except SkippedDocument as e:
+            skipped.append({"file": pdf.name, "reason": f"{e.reason}: {e}"})
             # Outputs from an earlier run or scope must not reach the index
             remove_outputs(doc_path, chunk_path)
-            print(f"  {pdf.name:<16} SKIPPED ({reason})")
+            print(f"  {pdf.name:<16} SKIPPED ({e.reason})")
             continue
 
         chunks = chunk_document(doc)
@@ -163,6 +172,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {pdf.name:<16} {s['doc_type']:<13} pages {s['pages_kept']:>3}/{s['pages_total']:<3} "
               f"chunks {s['chunks']:>4} (tables {s['table_chunks']:>3})  "
               f"unknown {s['unknown_section_share']:.0%}  FY end {s['fiscal_year_end']}{warn}")
+
+    if args.limit is None:
+        doc_ids = {metadata_for(pdf, inventory)["doc_id"] for pdf in pdfs}
+        for path in orphan_outputs(clean_dir, chunk_dir, doc_ids):
+            path.unlink()
+            print(f"  removed {path.name} (its PDF is no longer in {raw})")
 
     if stats:
         write_csv(chunk_dir / "_stats.csv", stats, list(stats[0].keys()))

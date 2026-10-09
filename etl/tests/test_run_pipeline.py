@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from src.models import Document
-from src.run_pipeline import fingerprint, is_up_to_date, remove_outputs, write_atomic
+from src.run_pipeline import fingerprint, is_up_to_date, orphan_outputs, remove_outputs, write_atomic
 
 META = dict(
     doc_id="AAPL_2019_10K", company="apple-inc", ticker="AAPL", fiscal_year=2019,
@@ -48,6 +48,20 @@ def test_out_of_scope_outputs_are_removed(tmp_path):
     remove_outputs(doc_path, chunk_path)
     assert not doc_path.exists() and not chunk_path.exists()
     remove_outputs(doc_path, chunk_path)  # already gone: no error
+
+
+def test_outputs_whose_pdf_is_gone_are_found(tmp_path):
+    clean_dir, chunk_dir = tmp_path / "clean", tmp_path / "chunks"
+    clean_dir.mkdir(), chunk_dir.mkdir()
+    for doc_id in ("AAPL_2019_10K", "CSX_2020_10K"):
+        write_atomic(clean_dir / f"{doc_id}.json", "{}")
+        write_atomic(chunk_dir / f"{doc_id}.jsonl", "{}\n")
+    write_atomic(chunk_dir / "_stats.csv", "doc_id\n")
+    write_atomic(clean_dir / "_skipped.csv", "file,reason\n")
+    assert orphan_outputs(clean_dir, chunk_dir, {"AAPL_2019_10K"}) == [
+        chunk_dir / "CSX_2020_10K.jsonl",
+        clean_dir / "CSX_2020_10K.json",
+    ]
 
 
 def test_atomic_write_leaves_no_temp_file(tmp_path):
