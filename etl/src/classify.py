@@ -12,10 +12,13 @@ except the financial statements: Qualcomm, Amgen, Dexcom, Vertex and
 Cognizant place them after the signature page, on pages numbered F-1, F-2...,
 so the range is extended over those pages.
 
-The signature page is found by its fixed statement ("Pursuant to the
-requirements of Section 13 or 15(d) ... the registrant has duly caused this
-report to be signed"), not by the word SIGNATURES: that word is also a line of
-the table of contents, which cut Facebook and IDEXX to a few pages.
+The signature page is found by its statement ("Pursuant to the requirements
+of Section 13 or 15(d) ... the registrant has duly caused this report to be
+signed"), not by the word SIGNATURES: that word is also a line of the table of
+contents, which cut Facebook and IDEXX to a few pages. Filers word the
+statement differently ("requirements of the Section 13", "Section 13 or
+Section 15(d)", "this Annual Report", "this Form 10-K"). Only when no variant
+is found does a SIGNATURES heading outside the table of contents end the 10-K.
 """
 
 import re
@@ -26,10 +29,11 @@ FORM_10K = re.compile(r"FORM\s+10-K\b", re.IGNORECASE)
 ANNUAL_REPORT = re.compile(r"ANNUAL\s+REPORT\s+PURSUANT\s+TO\s+SECTION\s+13", re.IGNORECASE)
 WASHINGTON = re.compile(r"Washington,?\s+D\.?\s*C\.?", re.IGNORECASE)
 SIGNATURE_STATEMENT = re.compile(
-    r"Pursuant\s+to\s+the\s+requirements\s+of\s+Section\s+13\s+or\s+15\s*\(\s*d\s*\)"
-    r"|duly\s+caused\s+this\s+(?:annual\s+)?report",
+    r"Pursuant\s+to\s+the\s+requirements\s+of\s+(?:the\s+)?Section\s+13\s+or\s+(?:Section\s+)?15\s*\(\s*d\s*\)"
+    r"|duly\s+caused\s+this\s+(?:annual\s+)?(?:report|Form\s+10-K)",
     re.IGNORECASE,
 )
+SIGNATURES_HEADING = re.compile(r"^\s*SIGNATURES?\s*$", re.IGNORECASE | re.MULTILINE)
 ITEM = re.compile(r"\bItem\s+(1A|1B|1|2|3|4|5|6|7A|7|8|9A|9B|9|10|11|12|13|14|15)\b", re.IGNORECASE)
 F_PAGE_NUMBER = re.compile(r"F\s*-\s*\d{1,3}")
 
@@ -37,6 +41,8 @@ F_PAGE_NUMBER = re.compile(r"F\s*-\s*\d{1,3}")
 COVER_WINDOW = 2000
 # A 10-K table of contents lists most Items; investor material never does
 MIN_CONTENTS_ITEMS = 10
+# A page listing this many distinct Items is an index, so its SIGNATURES line is not the heading
+INDEX_MIN_ITEMS = 4
 # Pages without an F-number tolerated between the signatures and the F-pages
 # (Amgen inserts two exhibits), or among the F-pages themselves (Vertex)
 MAX_F_GAP = 3
@@ -81,9 +87,17 @@ def find_cover(page_texts: list[str]) -> int | None:
 
 
 def find_signatures(page_texts: list[str], start: int) -> int | None:
-    """1-based page of the signature statement at or after `start`."""
-    for i in range(start - 1, len(page_texts)):
+    """
+    1-based page of the signature statement at or after `start`; if no page has
+    it, the first SIGNATURES heading on a page that is not an index; else None.
+    """
+    pages = range(start - 1, len(page_texts))
+    for i in pages:
         if SIGNATURE_STATEMENT.search(flatten(page_texts[i])):
+            return i + 1
+    for i in pages:
+        text = page_texts[i]
+        if SIGNATURES_HEADING.search(text) and len({m.upper() for m in ITEM.findall(text)}) < INDEX_MIN_ITEMS:
             return i + 1
     return None
 

@@ -92,3 +92,40 @@ def test_financial_statements_after_the_signatures_stay_in_the_10k():
              f_page.format(1), f_page.format(2), "Cognizant | F-3 | December 31, 2021 Form 10-K",
              "Exhibit 10.1", "Exhibit 10.2", "Exhibit 10.3", "Exhibit 10.4", "Exhibit 99 | F-1"]
     assert classify(pages) == ("10-K", (1, 8))
+
+
+def test_signature_statement_wording_variants():
+    # Illumina and Moderna write "requirements of the Section 13"; other filers
+    # "Section 13 or Section 15(d)", or "duly caused this Form 10-K to be signed"
+    variants = [
+        "Pursuant to the requirements of the Section 13 or 15(d) of the Securities Exchange Act of 1934, "
+        "the Registrant has duly caused this Report to be signed",
+        "Pursuant to the requirements of Section 13 or Section 15(d) of the Securities Exchange Act of 1934, "
+        "the registrant has caused this report to be signed",
+        "Pursuant to the requirements of the Securities Exchange Act of 1934, "
+        "the registrant has duly caused this Form 10-K to be signed",
+    ]
+    for statement in variants:
+        assert classify([COVER, "Item 1", "SIGNATURES\n" + statement, "Exhibit 10.1"]) == ("10-K", (1, 3)), statement
+
+
+def test_signatures_heading_ends_the_10k_when_no_statement_is_found():
+    # The heading is only a fallback, and never the SIGNATURES line of the table of contents
+    contents = CONTENTS + "\nSIGNATURES"
+    signed = "SIGNATURES\nThis report was signed by the following persons."
+    pages = [COVER, contents, "Item 1. Business", signed, "Exhibit 10.1 credit agreement"]
+    assert classify(pages) == ("10-K", (1, 4))
+
+
+def test_cover_interleaved_with_other_text_is_found_by_the_sec_address():
+    # Intel 2021: the cover shares its page with a corporate directory, which splits
+    # "ANNUAL REPORT ... PURSUANT TO SECTION 13"
+    intel = ("Corporate Directory UNITED STATES SECURITIES AND EXCHANGE COMMISSION Washington, D.C. 20549 "
+             "BOARD OF DIRECTORS FORM 10-K Chief Executive ANNUAL REPORT Officer PURSUANT TO SECTION 13 OR 15(d)")
+    assert classify(["Dear shareholders", "Annual review", intel, "Item 1A", SIGNATURE_PAGE]) == ("10-K_wrapped", (3, 5))
+
+
+def test_a_cross_reference_index_is_not_a_table_of_contents():
+    # Intel's index maps every Item to pages of its annual report and sits at the end of the PDF
+    index = "Form 10-K Cross-Reference Index\n" + CONTENTS
+    assert classify(["Dear shareholders", "Annual review", index]) == ("annual_report", None)

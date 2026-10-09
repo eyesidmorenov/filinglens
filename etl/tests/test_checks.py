@@ -1,7 +1,7 @@
 import pytest
 
 from src import tokens
-from src.checks import company_key, known_word_share, names_company, unreadable_pages
+from src.checks import company_key, known_word_share, names_company, unreadable_pages, wrong_company
 
 PROSE = (
     "We design, manufacture and market smartphones, personal computers, tablets, wearables and accessories, "
@@ -62,3 +62,23 @@ def test_old_cover_without_ticker_is_matched_by_name():
 
 def test_nothing_to_compare_with():
     assert names_company("SOME COMPANY INC. (Exact name of registrant)", "XYZ", "unknown") is None
+
+
+SEC_COVER = (
+    "UNITED STATES SECURITIES AND EXCHANGE COMMISSION Washington, D.C. 20549 FORM 10-K "
+    "ANNUAL REPORT PURSUANT TO SECTION 13 OR 15(d) {name} (Exact name of registrant)"
+)
+
+
+def test_company_is_checked_on_a_real_sec_cover():
+    csw = SEC_COVER.format(name="CSW INDUSTRIALS, INC. | CSWI | Nasdaq")
+    apple = SEC_COVER.format(name="Apple Inc. | AAPL | Nasdaq")
+    assert wrong_company([csw, "Item 1"], 1, "CSX", "csx-corp") is True
+    assert wrong_company([apple, "Item 1"], 1, "AAPL", "apple-inc") is False
+
+
+def test_a_table_of_contents_start_is_not_checked():
+    # Activision 2020: the cover is an image and the 10-K starts at its table of
+    # contents, which need not name the company
+    contents = "TABLE OF CONTENTS\nItem 1. | Business | 4\nItem 1A. | Risk Factors | 13"
+    assert wrong_company(["Dear shareholders", contents, "Item 1"], 2, "ATVI", "activision-blizzard-inc") is False

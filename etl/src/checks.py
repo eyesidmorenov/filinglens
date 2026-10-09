@@ -11,12 +11,14 @@ table of drug names scores 28% (Amgen 2021). Broken pages score 0-10%.
 Wrong company. The file name says which company a PDF belongs to, but the
 bucket can be wrong: CSX_2020.pdf holds the 10-K of CSW Industrials. Since
 April 2019 every 10-K cover lists its trading symbol; older covers at least
-carry the company name.
+carry the company name. Only a real SEC cover is checked: when the cover is an
+image and the 10-K starts at its table of contents (Activision 2020), that page
+need not name the company, so there is nothing to compare.
 """
 
 import re
 
-from .classify import flatten
+from .classify import flatten, is_cover
 from .tokens import vocabulary
 
 WORD = re.compile(r"[A-Za-z]{3,}")
@@ -64,3 +66,12 @@ def names_company(cover_text: str, ticker: str, company: str) -> bool | None:
     # "Amazon.com" and "O'Reilly" are written "amazoncom" and "oreilly" in the folder names
     squeezed = re.sub(r"[.'’]", "", flat.lower())
     return re.search(rf"\b{re.escape(key)}\b", squeezed) is not None
+
+
+def wrong_company(page_texts: list[str], start: int, ticker: str, company: str) -> bool:
+    """True only when the 10-K starts at a real SEC cover that names another company."""
+    if not is_cover(page_texts[start - 1]):
+        return False
+    # The cover can spill onto a second page
+    cover = "\n".join(page_texts[start - 1:start + 1])
+    return names_company(cover, ticker, company) is False

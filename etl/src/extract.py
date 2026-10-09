@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pymupdf
 
-from .checks import MAX_UNREADABLE_SHARE, names_company, unreadable_pages
+from .checks import MAX_UNREADABLE_SHARE, unreadable_pages, wrong_company
 from .classify import classify, fiscal_year_end
 from .clean import clean_pages
 from .layout import page_rows
@@ -76,11 +76,8 @@ def extract_document(pdf: Path, meta: dict, scope: str = "10k", fingerprint: str
     if total and bad / total > MAX_UNREADABLE_SHARE:
         raise UnreadableTextError(f"{pdf.name}: {bad} of {total} pages are garbled (font without character map)")
 
-    if form_range:
-        # The cover can spill onto a second page
-        cover = "\n".join(page_texts[form_range[0] - 1:form_range[0] + 1])
-        if names_company(cover, meta["ticker"], meta["company"]) is False:
-            raise WrongCompanyError(f"{pdf.name}: the 10-K cover names neither {meta['ticker']} nor {meta['company']}")
+    if form_range and wrong_company(page_texts, form_range[0], meta["ticker"], meta["company"]):
+        raise WrongCompanyError(f"{pdf.name}: the 10-K cover names neither {meta['ticker']} nor {meta['company']}")
 
     if scope == "10k":
         if not form_range:
