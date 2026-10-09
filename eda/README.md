@@ -1,44 +1,57 @@
-# Entregable 1: EDA del dataset
+# Deliverable 1: dataset EDA
 
-Mide el dataset antes de construir nada encima. No limpia ni transforma: eso es del entregable 2.
+*English · [Español](README.es.md)*
 
-## Instalación
+Measures the dataset before building anything on top of it. It doesn't clean or transform anything: that is deliverable 2.
 
-Desde la raíz del proyecto:
+## Setup
+
+From the project root:
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate      # en Windows: .venv\Scripts\activate
+source .venv/bin/activate      # on Windows: .venv\Scripts\activate
 pip install -r eda/requirements.txt
 cp eda/.env.example eda/.env
 ```
 
-Abre `eda/.env` y pega las llaves de solo lectura que vienen en el brief.
+Open `eda/.env` and paste the read-only keys from the brief.
 
-## Cómo se corre
+## How to run it
 
-Los scripts miden y guardan a disco. El notebook solo lee lo que ellos guardaron.
+The scripts measure and save to disk. The notebook only reads what they saved.
 
-| Orden | Comando | Qué hace | Qué deja |
+| Step | Command | What it does | What it leaves |
 | --- | --- | --- | --- |
-| 1 | `python eda/explore_s3.py` | Lista el bucket completo, no descarga nada. Parsea cada ruta, detecta sufijos hash y duplicados | `data/eda/bucket_inventory.csv`, `data/eda/bucket_unparsed.csv` |
-| 2 | `python eda/download_sample.py` | Descarga la muestra de trabajo: 5 empresas, 2019 a 2021. Determinista | PDF en `data/raw/`, `data/raw/inventario.csv` |
-| 3 | `python eda/characterize.py` | Abre cada PDF y mide páginas, texto, secciones Item, tablas | `data/eda/caracterizacion.csv`, `data/eda/caracterizacion.json` |
-| 4 | Abrir `eda/eda_filinglens.ipynb` y ejecutar todo | Grafica y documenta los hallazgos | |
+| 1 | `python eda/explore_s3.py` | Lists the whole bucket, downloads nothing. Parses every path, detects hash suffixes and duplicates | `data/eda/bucket_inventory.csv`, `data/eda/bucket_unparsed.csv` |
+| 2 | `python eda/download_sample.py` | Downloads the working sample: 5 companies, 2019 to 2021. Deterministic | PDFs in `data/raw/`, `data/raw/inventario.csv` |
+| 3 | `python eda/characterize.py` | Opens each PDF and measures pages, text, Item sections, tables | `data/eda/caracterizacion.csv`, `data/eda/caracterizacion.json` |
+| 4 | Open `eda/eda_filinglens.ipynb` and run all | Plots and documents the findings | |
 
-`download_sample.py --check` verifica qué hay en el bucket sin descargar.
+`download_sample.py --check` checks what is in the bucket without downloading.
 
-## Lo que encontramos
+### From the sample to 25 companies
 
-| Hallazgo | Dato |
+| Command | What it does |
 | --- | --- |
-| La metadata está en el nombre del archivo | 9.852 de 9.855 PDF siguen `BOLSA_TICKER_AÑO.pdf`, 45 con un sufijo hash |
-| El dataset se corta en 2021 | Va de 2003 a 2022, casi el 80% entre 2018 y 2021 |
-| Hay dos tipos de documento | 10-K con secciones Item y Annual Report sin ellas |
-| El ticker es la llave, no el nombre de la carpeta | 11 tickers con documentos duplicados por errores o cambios de nombre |
+| `python eda/select_companies.py` | Reads `bucket_inventory.csv` (no S3 calls) and keeps 35 well-known companies with fiscal 2019, 2020 and 2021. Writes `eda/companies.csv` |
+| `python eda/download_sample.py --companies eda/companies.csv` | Downloads those companies instead of the 5-company sample |
 
-El detalle y las gráficas están en el notebook.
+It picks 35 on purpose: the ETL drops the filings without a 10-K, and the project keeps the first 25 that pass.
 
-## Importante
+The output file names (`inventario.csv`, `caracterizacion.*`) and their columns stay as they are: the ETL and the notebook read them.
 
-El `.env` está en el `.gitignore`. Las llaves no pueden entrar al repositorio, ni en el código, ni en un notebook, ni en el historial.
+## What we found
+
+| Finding | Data |
+| --- | --- |
+| The metadata is in the file name | 9,852 of 9,855 PDFs follow `EXCHANGE_TICKER_YEAR.pdf`, 45 with a hash suffix |
+| The dataset ends in 2021 | It goes from 2003 to 2022, almost 80% between 2018 and 2021 |
+| There are two types of documents | 10-K with Item sections, and Annual Reports without them |
+| The ticker is the key, not the folder name | 11 tickers with duplicate documents due to errors or name changes |
+
+The detail and the charts are in the notebook.
+
+## Important
+
+`.env` is in `.gitignore`. The keys can never enter the repository: not in the code, not in a notebook, not in the history.
