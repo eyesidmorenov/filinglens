@@ -5,6 +5,11 @@ Load ETL chunks into Elasticsearch with their BGE embeddings.
     python -m src.load --doc AAPL_2019_10K          # one document
     python -m src.load --recreate                   # drop and rebuild the index
     python -m src.load --doc AAPL_2019_10K --check "What are Apple's main risk factors?"
+    python -m src.load --embed-only                 # only fill the embeddings cache; no Elasticsearch
+
+--embed-only computes and caches the embeddings without connecting to
+Elasticsearch, so the slow step can run on any machine with a GPU, and the
+cache (data/embeddings/) is then copied back and loaded in seconds.
 
 What the loader guarantees:
   - A document's chunks in the index are exactly the ones in its .jsonl: after
@@ -20,6 +25,7 @@ What the loader guarantees:
 import argparse
 import hashlib
 import sys
+import time
 from dataclasses import replace
 from functools import lru_cache
 from pathlib import Path
@@ -106,7 +112,8 @@ def load_cache(path: Path) -> dict[str, np.ndarray]:
 def embedder() -> SentenceTransformersDocumentEmbedder:
     """Loaded on first use only: a reload served entirely from cache never loads the model."""
     e = SentenceTransformersDocumentEmbedder(
-        model=config.EMBEDDING_MODEL, normalize_embeddings=True, batch_size=16, progress_bar=False
+        model=config.EMBEDDING_MODEL, normalize_embeddings=True,
+        batch_size=config.EMBED_BATCH_SIZE, progress_bar=False,
     )
     e.warm_up()
     return e
@@ -180,12 +187,36 @@ def check(store: ElasticsearchDocumentStore, question: str, doc_ids: list[str]) 
                   f"{m['chunk_type']}]  {d.content[:90].replace(chr(10), ' ')}...")
 
 
+def embed_only(files: list[Path]) -> int:
+    """Fill the embeddings cache for these chunk files. Never connects to Elasticsearch."""
+    print(f"Model {config.EMBEDDING_MODEL}, batch {config.EMBED_BATCH_SIZE} -> cache in "
+          f"{cache_path('_').parent} (no Elasticsearch)")
+    total = computed_total = 0
+    started = time.perf_counter()
+    for path in files:
+        documents = [chunk_to_document(c) for c in read_chunks(path)]
+        documents, computed = embed(documents, path.stem)
+        total += len(documents)
+        computed_total += computed
+        print(f"  {path.stem:<16} {len(documents):>4} chunks  ({computed} embedded now, "
+              f"{len(documents) - computed} from cache)  over {config.MAX_TOKENS} tokens: "
+              f"{count_over_limit(documents)}")
+    seconds = time.perf_counter() - started
+    rate = f", {computed_total / seconds:.1f} chunks/s" if computed_total else ""
+    print(f"\nCache ready: {total} chunks, {computed_total} embedded in {seconds:.0f} s{rate}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Load ETL chunks into Elasticsearch with BGE embeddings")
     ap.add_argument("--doc", action="append", default=[], help="doc_id to load (repeatable); default: all")
     ap.add_argument("--recreate", action="store_true", help="delete and recreate the index first")
     ap.add_argument("--check", metavar="QUESTION", help="run a test question after loading")
+    ap.add_argument("--embed-only", action="store_true",
+                    help="only compute and cache embeddings; does not connect to Elasticsearch")
     args = ap.parse_args(argv)
+    if args.embed_only and (args.recreate or args.check):
+        ap.error("--embed-only does not touch the index: drop --recreate and --check")
 
     chunk_dir = config.data_dir() / "chunks"
     files = sorted(chunk_dir.glob("*.jsonl"))
@@ -194,6 +225,9 @@ def main(argv: list[str] | None = None) -> int:
     if not files:
         print(f"No chunk files found in {chunk_dir} for {args.doc or 'any document'}", file=sys.stderr)
         return 1
+
+    if args.embed_only:
+        return embed_only(files)
 
     try:
         store = make_store(recreate=args.recreate)

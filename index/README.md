@@ -18,6 +18,7 @@ docker compose --profile index build index
 docker compose --profile index run --rm index                                   # load every document
 docker compose --profile index run --rm index python -m src.load --doc AAPL_2019_10K
 docker compose --profile index run --rm index python -m src.load --recreate     # rebuild the index
+docker compose --profile index run --rm --no-deps index python -m src.load --embed-only   # embeddings only, no Elasticsearch
 docker compose --profile index run --rm index pytest -q                         # tests
 ```
 
@@ -28,6 +29,37 @@ docker compose --profile index run --rm index python -m src.load --doc AAPL_2019
 ```
 
 The first run downloads the model (about 440 MB) into the `hf_models` Docker volume.
+
+## Two steps: compute the embeddings, then load them
+
+Computing embeddings is the slow part (about 1.5 chunks per second on a laptop CPU; 3,231 chunks took 39 minutes). Loading into Elasticsearch takes seconds once the embeddings exist. The loader can do both at once, or the two steps can run on different machines:
+
+| Step | Command | Needs Elasticsearch | Output |
+| --- | --- | --- | --- |
+| 1. Compute embeddings | `python -m src.load --embed-only` | No | Cache in `data/embeddings/` |
+| 2. Create the index and load | `python -m src.load` | Yes | Index `filinglens-chunks`, filled from the cache |
+
+Step 2 creates the index with the mapping it needs (see "What is stored") and reads every vector from the cache, so nothing is recomputed. Whoever runs step 2 only needs `data/chunks/` and `data/embeddings/`, for example by unzipping a shared cache into the repository root.
+
+### Optional: step 1 on a free GPU (Google Colab)
+
+The pipeline is plain Python run in Docker, with no notebooks. Colab is only a temporary machine with a GPU to run step 1, and only the cache comes back. On a GPU the same script embeds thousands of chunks in minutes, and the vectors match the CPU ones.
+
+1. Locally, after the ETL, from the repository root (works on Windows, macOS and Linux):
+   ```bash
+   python -c "import shutil; shutil.make_archive('chunks', 'zip', '.', 'data/chunks')"
+   ```
+   `chunks.zip` keeps the `data/chunks/` path inside.
+2. In Colab: *Runtime → Change runtime type → T4 GPU*, upload `chunks.zip` in the Files panel, then run these commands in a cell:
+   ```bash
+   !git clone https://github.com/eyesidmorenov/filinglens.git
+   !pip install -q haystack-ai==3.3.0 elasticsearch-haystack==6.4.1 sentence-transformers==6.1.0 sentence-transformers-haystack==0.2.0
+   !unzip -q chunks.zip -d filinglens
+   !cd filinglens/index && DATA_DIR=/content/filinglens/data EMBED_BATCH_SIZE=64 python -m src.load --embed-only
+   !cd filinglens && zip -qr embeddings.zip data/embeddings
+   ```
+   Colab already has PyTorch with GPU support: do not install `index/requirements.txt` there, because it pins the CPU build.
+3. Download `filinglens/embeddings.zip`, unzip it into the repository root, and run step 2.
 
 **The index lives on your machine.** Elasticsearch runs locally from `docker-compose.yml`, and its data is in the `filinglens_es_data` Docker volume. Nothing in `data/` goes to GitHub, so every teammate (and the demo laptop) builds the index with the ETL and these commands.
 
