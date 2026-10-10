@@ -21,7 +21,9 @@ docker compose --profile etl run --rm etl pytest -q                # tests
 
 The container runs once and exits. The first run downloads the BGE tokenizer (about 1 MB) into the shared `hf_models` volume.
 
-A document is skipped only if it is **up to date**: its output was produced by this exact ETL code and these settings. Every output records a fingerprint of the code; after pulling a new version of the ETL, or changing `--scope`, the affected documents are redone automatically. Outputs of a document that is now skipped (scanned, or out of scope) are deleted, so they can't reach the index. `--force` redoes everything anyway.
+A document is skipped only if it is **up to date**: its output was produced by this exact ETL code and these settings. Every output records a fingerprint of the code; after pulling a new version of the ETL, or changing `--scope`, the affected documents are redone automatically. Outputs of a document that is now skipped (scanned, out of scope, unreadable text or wrong company) are deleted, so they can't reach the index. `--force` redoes everything anyway.
+
+When a company leaves the selection, its PDFs leave `data/raw` but its outputs stay, and the index loads every `.jsonl` in `data/chunks`. A full run (no `--limit`) lists those documents at the end; `--prune` deletes their outputs. Deleting is never automatic: the outputs may come from a shared chunks package and can't be rebuilt without their PDFs.
 
 Options of `python -m src.run_pipeline`:
 
@@ -31,6 +33,7 @@ Options of `python -m src.run_pipeline`:
 | `--scope 10k` | Default. Keep only the Form 10-K pages; a PDF without a 10-K (Microsoft's investor reports) is skipped |
 | `--scope all` | Keep every page of every PDF, investor material included |
 | `--force` | Redo documents even if they are up to date |
+| `--prune` | Delete the outputs of documents whose PDF is no longer in `data/raw` (full runs only) |
 
 ## Output
 
@@ -66,11 +69,20 @@ A chunk:
 
 ## How it works
 
-**Three kinds of PDF.** The sample holds pure 10-Ks (Apple, Tesla), 10-Ks wrapped in investor material (NVIDIA, Intel) and investor-only annual reports without a 10-K (Microsoft). `classify.py` finds the SEC Form 10-K cover and the SIGNATURES page. As decided at the September 28 mentoring, the first iteration works with 10-K filings only: the default scope keeps that page range, which drops investor material and exhibits (for Tesla 2020, 323 of 449 pages), and skips PDFs with no 10-K at all.
+**Three kinds of PDF.** The sample holds pure 10-Ks (Apple, Tesla), 10-Ks wrapped in investor material (NVIDIA, Intel) and investor-only annual reports without a 10-K (Microsoft). `classify.py` finds the SEC Form 10-K cover and the signature page. As decided at the September 28 mentoring, the first iteration works with 10-K filings only: the default scope keeps that page range, which drops investor material and exhibits (for Tesla 2020, 323 of 449 pages), and skips PDFs with no 10-K at all. Lessons from the 35 candidate companies (105 PDFs):
+
+- The signature page is recognized by its statement ("Pursuant to the requirements of Section 13 or 15(d)... has duly caused this report to be signed", in the variants filers use), not by the word SIGNATURES, which is also a line of the table of contents (it cut Facebook and IDEXX to a few pages). Only when no variant is found does a SIGNATURES heading outside the table of contents end the 10-K.
+- Qualcomm, Amgen, Dexcom, Vertex and Cognizant put their financial statements after the signature page, on pages numbered F-1, F-2... The range is extended over those pages, and their chunks are labeled Item 8.
+- When the cover is an image (Activision 2020), the 10-K starts at its table of contents.
+
+**Sanity checks** (`checks.py`). A PDF is skipped, with its reason in `_skipped.csv`, when:
+
+- **Unreadable text**: its fonts have no character map, so the text comes out scrambled ("DVSSFOUMZ" instead of "currently" in AMD 2019). A page is unreadable when less than 20% of its words are known to the tokenizer, and the PDF is skipped when more than 20% of its 10-K pages are. A new copy of the PDF is needed.
+- **Wrong company**: the 10-K cover shows neither the ticker nor the company name of the file (`CSX_2020.pdf` holds the 10-K of CSW Industrials). Only a real SEC cover is checked: when the 10-K starts at its table of contents, there is nothing to compare.
 
 **Text by rows, not by lines.** `page.get_text()` puts every number of a financial statement on its own line, and `page.find_tables()` does not detect 10-K tables because they have no ruling lines. `layout.py` rebuilds each page as rows of cells from word coordinates, which keeps every figure under its year. See the spike in `spikes/table_spike.py`.
 
-**Cleaning.** Running headers and footers (repeated at the top or bottom of many pages), page numbers, hyphenated line breaks and whitespace (`clean.py`).
+**Cleaning.** Running headers and footers (repeated at the top or bottom of many pages), page numbers and whitespace (`clean.py`). A line that ends in a hyphen is joined to the next one and keeps its hyphen: in 10-Ks those are compound words ("third-party", "COVID-19", "Form 10-K"), not words split by syllable.
 
 **Sections.** Numbered headings ("Item 1A. Risk Factors") are required by SEC Rule 12b-13. The table of contents is ignored, and so are sentences that merely start with a reference ("Item 7 of this Form 10-K…"). Filers without numbered headings get known captions mapped to Items (`sections.py`).
 
@@ -96,6 +108,7 @@ etl/
 │   ├── models.py           contracts 1 and 2 (pydantic)
 │   ├── metadata.py         metadata from the inventory or the file name
 │   ├── classify.py         document type, Form 10-K page range, fiscal year end
+│   ├── checks.py           unreadable text and wrong-company checks
 │   ├── layout.py           page -> rows of cells; table helpers
 │   ├── clean.py            cleaning rules
 │   ├── extract.py          PDF -> Document

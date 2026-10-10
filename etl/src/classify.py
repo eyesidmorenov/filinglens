@@ -6,36 +6,121 @@ The sample showed three kinds:
   10-K_wrapped   investor material first, full 10-K inside (NVIDIA, Intel)
   annual_report  investor-only report, no 10-K at all (Microsoft)
 
-The 10-K range runs from the SEC cover page to the SIGNATURES page. Anything
-after it is exhibits (for Tesla, hundreds of pages of credit agreements).
+The 10-K range runs from the SEC cover page to the signature page. Anything
+after it is exhibits (for Tesla, hundreds of pages of credit agreements),
+except the financial statements: Qualcomm, Amgen, Dexcom, Vertex and
+Cognizant place them after the signature page, on pages numbered F-1, F-2...,
+so the range is extended over those pages.
+
+The signature page is found by its statement ("Pursuant to the requirements
+of Section 13 or 15(d) ... the registrant has duly caused this report to be
+signed"), not by the word SIGNATURES: that word is also a line of the table of
+contents, which cut Facebook and IDEXX to a few pages. Filers word the
+statement differently ("requirements of the Section 13", "Section 13 or
+Section 15(d)", "this Annual Report", "this Form 10-K"). Only when no variant
+is found does a SIGNATURES heading outside the table of contents end the 10-K.
 """
 
 import re
 from datetime import date, datetime
 
-COVER = re.compile(
-    r"SECURITIES\s+AND\s+EXCHANGE\s+COMMISSION.{0,400}?FORM\s+10-K", re.IGNORECASE | re.DOTALL
+SEC = re.compile(r"SECURITIES\s+AND\s+EXCHANGE\s+COMMISSION", re.IGNORECASE)
+FORM_10K = re.compile(r"FORM\s+10-K\b", re.IGNORECASE)
+ANNUAL_REPORT = re.compile(r"ANNUAL\s+REPORT\s+PURSUANT\s+TO\s+SECTION\s+13", re.IGNORECASE)
+WASHINGTON = re.compile(r"Washington,?\s+D\.?\s*C\.?", re.IGNORECASE)
+SIGNATURE_STATEMENT = re.compile(
+    r"Pursuant\s+to\s+the\s+requirements\s+of\s+(?:the\s+)?Section\s+13\s+or\s+(?:Section\s+)?15\s*\(\s*d\s*\)"
+    r"|duly\s+caused\s+this\s+(?:annual\s+)?(?:report|Form\s+10-K)",
+    re.IGNORECASE,
 )
-SIGNATURES = re.compile(r"^\s*SIGNATURES\s*$", re.IGNORECASE | re.MULTILINE)
+SIGNATURES_HEADING = re.compile(r"^\s*SIGNATURES?\s*$", re.IGNORECASE | re.MULTILINE)
+ITEM = re.compile(r"\bItem\s+(1A|1B|1|2|3|4|5|6|7A|7|8|9A|9B|9|10|11|12|13|14|15)\b", re.IGNORECASE)
+F_PAGE_NUMBER = re.compile(r"F\s*-\s*\d{1,3}")
 
 # The cover sits at the top of its page; a mention deeper in the text is a reference
-COVER_WINDOW = 1500
+COVER_WINDOW = 2000
+# A 10-K table of contents lists most Items; investor material never does
+MIN_CONTENTS_ITEMS = 10
+# A page listing this many distinct Items is an index, so its SIGNATURES line is not the heading
+INDEX_MIN_ITEMS = 4
+# Pages without an F-number tolerated between the signatures and the F-pages
+# (Amgen inserts two exhibits), or among the F-pages themselves (Vertex)
+MAX_F_GAP = 3
+
+
+def flatten(text: str) -> str:
+    """One line, single spaces, table cells merged back into the sentence."""
+    return " ".join(text.replace(" | ", " ").split())
+
+
+def is_cover(text: str) -> bool:
+    """
+    The SEC cover: commission name, form name, and either 'Annual report pursuant
+    to Section 13' or the commission's address. The commission name and form name
+    alone are not enough: exhibit lists cite filings 'with the Securities and
+    Exchange Commission ... on Form 10-K' (Fiserv 2021). The address covers
+    Intel 2021, whose cover text is interleaved with its corporate directory.
+    """
+    top = flatten(text)[:COVER_WINDOW]
+    return bool(SEC.search(top) and FORM_10K.search(top) and (ANNUAL_REPORT.search(top) or WASHINGTON.search(top)))
+
+
+def is_contents(text: str) -> bool:
+    """
+    The 10-K table of contents, for PDFs whose cover is an image (Activision 2020).
+    Not a cross-reference index: Intel's maps each Item to pages of its annual
+    report and sits at the end of the PDF.
+    """
+    top = flatten(text)[:COVER_WINDOW]
+    items = {m.upper() for m in ITEM.findall(top)}
+    lower = top.lower()
+    return len(items) >= MIN_CONTENTS_ITEMS and "risk factors" in lower and "cross-reference" not in lower
 
 
 def find_cover(page_texts: list[str]) -> int | None:
-    """1-based page of the first SEC Form 10-K cover, or None."""
-    for i, text in enumerate(page_texts):
-        if COVER.search(text[:COVER_WINDOW]):
-            return i + 1
+    """1-based page where the Form 10-K starts: its SEC cover, or else its table of contents."""
+    for check in (is_cover, is_contents):
+        for i, text in enumerate(page_texts):
+            if check(text):
+                return i + 1
     return None
 
 
 def find_signatures(page_texts: list[str], start: int) -> int | None:
-    """1-based page of the first SIGNATURES heading at or after `start`."""
-    for i in range(start - 1, len(page_texts)):
-        if SIGNATURES.search(page_texts[i]):
+    """
+    1-based page of the signature statement at or after `start`; if no page has
+    it, the first SIGNATURES heading on a page that is not an index; else None.
+    """
+    pages = range(start - 1, len(page_texts))
+    for i in pages:
+        if SIGNATURE_STATEMENT.search(flatten(page_texts[i])):
+            return i + 1
+    for i in pages:
+        text = page_texts[i]
+        if SIGNATURES_HEADING.search(text) and len({m.upper() for m in ITEM.findall(text)}) < INDEX_MIN_ITEMS:
             return i + 1
     return None
+
+
+def is_f_page(text: str) -> bool:
+    """A page numbered F-1, F-2... at its top or bottom: the financial statements.
+    The number can be a cell of the footer row ("Cognizant | F-1 | December 31, 2021 Form 10-K")."""
+    lines = [l for l in text.split("\n") if l.strip()]
+    cells = [c.strip() for l in lines[:2] + lines[-2:] for c in l.split(" | ")]
+    return any(F_PAGE_NUMBER.fullmatch(c) for c in cells)
+
+
+def financial_pages_end(page_texts: list[str], signatures: int) -> int:
+    """Last F-page right after the signature page, or the signature page if there are none."""
+    end, gap = signatures, 0
+    for i in range(signatures, len(page_texts)):
+        if is_f_page(page_texts[i]):
+            end, gap = i + 1, 0
+        else:
+            gap += 1
+            if gap > MAX_F_GAP:
+                break
+    return end
 
 
 FISCAL_YEAR_END = re.compile(
@@ -45,8 +130,7 @@ FISCAL_YEAR_END = re.compile(
 
 def fiscal_year_end(cover_text: str) -> date | None:
     """'For the fiscal year ended September 28, 2019' on the 10-K cover -> date(2019, 9, 28)."""
-    flat = " ".join(cover_text.replace(" | ", " ").split())
-    m = FISCAL_YEAR_END.search(flat)
+    m = FISCAL_YEAR_END.search(flatten(cover_text))
     if not m:
         return None
     month, day, year = m.groups()
@@ -77,6 +161,7 @@ def classify(page_texts: list[str]) -> tuple[str, tuple[int, int] | None]:
     start = find_cover(page_texts)
     if start is None:
         return "annual_report", None
-    end = find_signatures(page_texts, start) or len(page_texts)
+    signatures = find_signatures(page_texts, start)
+    end = financial_pages_end(page_texts, signatures) if signatures else len(page_texts)
     doc_type = "10-K" if start == 1 else "10-K_wrapped"
     return doc_type, (start, end)
