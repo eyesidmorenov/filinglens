@@ -1,0 +1,7 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.*
+haystack-ai==3.3.0
+elasticsearch-haystack==6.4.1
+sentence-transformers==6.1.0
+sentence-transformers-haystack==0.2.0
+pytest==8.4.2
