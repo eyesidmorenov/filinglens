@@ -120,6 +120,7 @@ filinglens/
 ├── etl/            Text extraction and chunking
 ├── index/          Elasticsearch, embeddings, loading
 ├── search/         Retrieval pipeline and evaluation
+├── search-index/   Read-only index health, stats and filters
 ├── generation/     Prompt and Claude integration
 ├── api/            FastAPI
 ├── ui/             Chainlit
