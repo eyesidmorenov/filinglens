@@ -1,2 +1,10 @@
+# CPU-only PyTorch (much smaller than the GPU build), same as search/
+--extra-index-url https://download.pytorch.org/whl/cpu
 fastapi
 uvicorn
+# Same versions as search/requirements.txt (José Luis's buscador)
+torch==2.*
+haystack-ai==3.3.0
+elasticsearch-haystack==6.4.1
+sentence-transformers==6.1.0
+sentence-transformers-haystack==0.2.0

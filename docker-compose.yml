@@ -20,12 +20,21 @@ services:
       retries: 12
 
   api:
-    build: ./api                         # usa el Dockerfile de api/
+    build:
+      context: ./api                     # usa el Dockerfile de api/
+      additional_contexts:               # el Dockerfile también copia estas carpetas
+        search: ./search                 # buscador (José Luis)
+        tenk: ./tenk-answer              # generador de respuestas (Juan Carlos)
     container_name: filinglens-api
     environment:
       # Dentro de la red de Compose, Elasticsearch se llama por el nombre del servicio,
       # no por localhost. Haystack leerá esta variable cuando se conecte.
       - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - EMBEDDING_MODEL=BAAI/bge-base-en-v1.5
+      # La llave se lee del archivo .env de la raíz (nunca se sube a GitHub)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - hf_models:/root/.cache/huggingface   # reutiliza el modelo BGE ya descargado
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:

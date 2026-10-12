@@ -7,6 +7,9 @@ app = FastAPI(title="Financial Advisor Chatbot API")
 
 class Question(BaseModel):
     question: str
+    # Optional: lets us test the real search before the company/year piece exists.
+    ticker: str | None = None
+    fiscal_year: int | None = None
 
 class Source(BaseModel):
     doc_id: str | None = None
@@ -29,7 +32,7 @@ def health():
 @app.post("/ask", response_model=Answer, response_model_exclude_none=True)
 def ask(payload: Question):
     start = time.perf_counter()
-    result = answer_question(payload.question)
+    result = answer_question(payload.question, payload.ticker, payload.fiscal_year)
     # Latencia total (búsqueda + generación). Pendiente confirmar con el equipo.
     latency_ms = int((time.perf_counter() - start) * 1000)
     return Answer(
