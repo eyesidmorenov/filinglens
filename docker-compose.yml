@@ -84,6 +84,13 @@ services:
       elasticsearch:
         condition: service_healthy
 
+  yahoo:
+    build: ./yahoo-finance
+    container_name: filinglens-yahoo
+    profiles: ["yahoo"]                  # corre solo a pedido: docker compose --profile yahoo run --rm yahoo
+    volumes:
+      - ./data:/app/data                 # escribe data/yahoo/coverage.csv y data/yahoo/snapshots
+
 volumes:
   es_data:
   hf_models:
