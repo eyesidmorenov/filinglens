@@ -93,9 +93,20 @@ SUBMIT_ANSWER_TOOL = Tool(
 TOOL_CHOICE: dict[str, Any] = {"type": "tool", "name": SUBMIT_ANSWER_TOOL_NAME}
 
 
-def build_prompt_builder() -> ChatPromptBuilder:
+# Structured output (output_config): the API guarantees JSON that matches the schema,
+# which a forced tool call does not (the model sometimes drops "status" or writes the
+# sources as XML inside "answer").
+STRUCTURED_OUTPUT_CONFIG: dict[str, Any] = {"format": {"type": "json_schema", "schema": SUBMIT_ANSWER_SCHEMA}}
+STRUCTURED_SYSTEM_PROMPT = SYSTEM_PROMPT.replace(
+    "Always respond by calling the submit_answer tool.",
+    "Always respond with a JSON object with the fields status, answer and sources.",
+)
+
+
+def build_prompt_builder(structured_output: bool = False) -> ChatPromptBuilder:
+    system = STRUCTURED_SYSTEM_PROMPT if structured_output else SYSTEM_PROMPT
     return ChatPromptBuilder(
-        template=[ChatMessage.from_system(SYSTEM_PROMPT), ChatMessage.from_user(USER_TEMPLATE)],
+        template=[ChatMessage.from_system(system), ChatMessage.from_user(USER_TEMPLATE)],
         required_variables=["documents", "question"],
     )
 

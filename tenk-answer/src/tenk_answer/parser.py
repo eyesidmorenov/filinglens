@@ -50,6 +50,15 @@ class ParsedAnswer:
 
 def _tool_arguments(reply: ChatMessage) -> dict[str, Any]:
     calls = [c for c in reply.tool_calls if c.tool_name == SUBMIT_ANSWER_TOOL_NAME]
+    if not calls and not reply.tool_calls and reply.text and reply.text.lstrip().startswith("{"):
+        # Structured output: the same fields arrive as a JSON text block
+        try:
+            parsed = json.loads(reply.text)
+        except json.JSONDecodeError as e:
+            raise MalformedResponseError(f"Reply is not valid JSON: {e}") from e
+        if not isinstance(parsed, dict):
+            raise MalformedResponseError(f"Reply must be a JSON object, got {type(parsed).__name__}")
+        return parsed
     if not calls:
         finish = reply.meta.get("finish_reason")
         raise MalformedResponseError(

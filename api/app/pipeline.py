@@ -54,6 +54,9 @@ def get_generator():
         api_key=Secret.from_env_var("ANTHROPIC_API_KEY"),
         temperature=None,
         max_tokens=2048,
+        # JSON enforced by the API: a forced tool call sometimes came back without
+        # "status" or with the sources as XML inside "answer" (HTTP 500)
+        structured_output=True,
     )
 
 

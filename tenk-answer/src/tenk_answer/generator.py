@@ -15,7 +15,13 @@ from haystack.utils import Secret
 from tenk_answer.context import TokenEstimator, build_context, estimate_tokens
 from tenk_answer.errors import GenerationError, InvalidDocumentError, MalformedResponseError
 from tenk_answer.parser import INSUFFICIENT_CONTEXT_MESSAGE, parse_reply
-from tenk_answer.prompts import SUBMIT_ANSWER_TOOL, TOOL_CHOICE, build_messages, build_prompt_builder
+from tenk_answer.prompts import (
+    STRUCTURED_OUTPUT_CONFIG,
+    SUBMIT_ANSWER_TOOL,
+    TOOL_CHOICE,
+    build_messages,
+    build_prompt_builder,
+)
 from tenk_answer.types import Answer, AnswerStatus, SearchResult
 
 logger = logging.getLogger(__name__)
@@ -50,27 +56,35 @@ class AnswerGenerator:
         max_retries: int = 2,
         generator: Any | None = None,
         token_estimator: TokenEstimator = estimate_tokens,
+        structured_output: bool = False,
     ) -> None:
         """
         :param temperature: `None` omits the parameter (for models that don't accept it).
         :param generator: Any Haystack chat generator whose `run` accepts `messages`, `generation_kwargs` and
             `tools`. Defaults to an `AnthropicChatGenerator` built from the other arguments.
         :param token_estimator: Estimates tokens for the context budget. Default: characters / 4.
+        :param structured_output: Ask for the answer as JSON with `output_config` (schema enforced by the API)
+            instead of a forced `submit_answer` tool call.
         """
         self.model = model
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.max_context_tokens = max_context_tokens
         self.token_estimator = token_estimator
+        self.structured_output = structured_output
         if generator is None:
             from haystack_integrations.components.generators.anthropic import AnthropicChatGenerator
 
             generator = AnthropicChatGenerator(api_key=api_key, model=model, timeout=timeout, max_retries=max_retries)
         self.generator = generator
-        self._prompt_builder = build_prompt_builder()
+        self._prompt_builder = build_prompt_builder(structured_output)
 
     def _generation_kwargs(self) -> dict[str, Any]:
-        kwargs: dict[str, Any] = {"tool_choice": dict(TOOL_CHOICE), "max_tokens": self.max_tokens}
+        kwargs: dict[str, Any] = {"max_tokens": self.max_tokens}
+        if self.structured_output:
+            kwargs["output_config"] = STRUCTURED_OUTPUT_CONFIG
+        else:
+            kwargs["tool_choice"] = dict(TOOL_CHOICE)
         if self.temperature is not None:
             kwargs["temperature"] = self.temperature
         return kwargs
@@ -78,7 +92,9 @@ class AnswerGenerator:
     def _call_model(self, messages: list[ChatMessage]) -> ChatMessage:
         try:
             result = self.generator.run(
-                messages=messages, generation_kwargs=self._generation_kwargs(), tools=[SUBMIT_ANSWER_TOOL]
+                messages=messages,
+                generation_kwargs=self._generation_kwargs(),
+                tools=None if self.structured_output else [SUBMIT_ANSWER_TOOL],
             )
         except (anthropic.AnthropicError, TimeoutError) as e:
             raise GenerationError(f"Answer generation failed: {type(e).__name__}: {e}") from e
