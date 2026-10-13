@@ -20,6 +20,8 @@ What the loader guarantees:
   - Embeddings are cached in data/embeddings/<model>/<doc_id>.npz, keyed by a
     hash of the exact text embedded, so only new or changed chunks are embedded.
   - An existing index with a different mapping is never reused silently.
+  - Every run applies INDEX_SETTINGS: no replica, so a single node stays green,
+    and queries without fields (Haystack's BM25) search only the text.
 """
 
 import argparse
@@ -39,7 +41,7 @@ from haystack_integrations.components.embedders.sentence_transformers import (
 from haystack_integrations.document_stores.elasticsearch import ElasticsearchDocumentStore
 
 from . import config
-from .documents import chunk_to_document, embedding_text, index_mapping, mapping_problems, read_chunks
+from .documents import INDEX_SETTINGS, chunk_to_document, embedding_text, index_mapping, mapping_problems, read_chunks
 
 
 class MappingMismatchError(Exception):
@@ -66,6 +68,7 @@ def make_store(recreate: bool = False) -> ElasticsearchDocumentStore:
             + "\n  - ".join(problems)
             + "\nRebuild it with --recreate (its chunks are reloaded from data/chunks)."
         )
+    client.indices.put_settings(index=config.ES_INDEX, settings=INDEX_SETTINGS)
     return store
 
 

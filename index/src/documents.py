@@ -118,6 +118,19 @@ def index_mapping(dims: int) -> dict:
     }
 
 
+# Settings the loader applies on every run. Both are dynamic in Elasticsearch, so an
+# existing index is updated in place, without reloading or re-embedding anything.
+INDEX_SETTINGS = {
+    # A single node can't hold a replica: with the default of 1 the index stays "yellow"
+    "index.number_of_replicas": 0,
+    # Queries that name no field search only the text. Haystack's BM25 retriever sends a
+    # multi_match without "fields"; with the default "*" it also matched the metadata, so
+    # the query "AAPL" hit every chunk of AAPL_2019 (all carry the ticker), not only the
+    # few whose text mentions it.
+    "index.query.default_field": ["content"],
+}
+
+
 def mapping_problems(actual: dict, expected: dict) -> list[str]:
     """Differences that would make the index behave differently from what this loader expects."""
     problems = []
