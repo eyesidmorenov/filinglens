@@ -83,9 +83,33 @@ python -m src.evaluation
 ```
 
 The report is written to `data/evaluation/search-report.json`, which is ignored
-by Git. Section metrics are diagnostic proxies. Exact hit rate and MRR remain
-`null` until reviewers populate `relevant_chunk_ids` with verified evidence
-chunks after the definitive ETL output has been reindexed.
+by Git. Section metrics are diagnostic proxies; the exact metrics count a hit
+only when a returned chunk is one of the question's `relevant_chunk_ids`.
+
+### Exact labels
+
+`relevant_chunk_ids` are filled by `src/labels.py` from evidence in the chunks,
+never from a retriever's ranking (727 ids for the 75 questions):
+
+| Category | A chunk is relevant when |
+| --- | --- |
+| Numeric (25) | a reported figure sits in the same table row or sentence as its metric (Apple 2020: 274,515 next to "net sales"). Figures were read from each filing's income statement. |
+| Legal proceedings (9), market risk (8) | it belongs to Item 3 or Item 7A |
+| Controls (8) | it is in Item 9A and states the conclusion ("concluded", "were effective") |
+| Broader (25) | it is in the expected section and mentions at least two of the question's topics |
+
+Chunk ids change whenever the ETL re-chunks a filing, so labels belong to one
+chunk package (2026-10-13, 24,737 chunks). After loading a new package, run
+`python -m src.labels` from `search/`: it rewrites `evaluation/questions.json`
+and refuses to write if any question finds no evidence.
+
+First run with exact labels (2026-10-13 package, top 5):
+
+| Mode | Exact hit rate | Exact MRR | Section hit rate | Section MRR |
+| --- | --- | --- | --- | --- |
+| BM25 | 0.61 | 0.42 | 0.85 | 0.67 |
+| Vector | 0.89 | 0.70 | 0.95 | 0.89 |
+| Hybrid | 0.89 | 0.63 | 0.96 | 0.83 |
 
 ## Tests
 
