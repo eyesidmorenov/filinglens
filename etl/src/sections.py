@@ -3,16 +3,20 @@ Assign a 10-K section ("Item 1A", "Item 7", ...) to every line of a document.
 
 Standard 10-Ks carry numbered headings ("Item 1A. Risk Factors"), required by
 SEC Rule 12b-13. Two traps:
-  - the table of contents repeats every heading near the start, so pages that
-    list many Items are ignored;
+  - the table of contents repeats every heading near the start, so its pages
+    are ignored. A contents page lists many Items, each followed by its page
+    number; a body page can also hold several short sections in a row (Items
+    1B to 4, or 10 to 14), but their headings carry no page numbers;
   - some filers don't use numbered headings (Microsoft's investor report,
     Intel's reordered 10-K). For them, known captions are mapped to the Item
     they correspond to; anything else stays "Unknown".
 
-Some filers (Qualcomm, Amgen, Dexcom) place the financial statements after the
-signature page, where the last heading seen is "Item 16. Form 10-K Summary".
-Their first caption there ("Report of Independent Registered Public Accounting
-Firm" or "Index to Consolidated Financial Statements") switches back to Item 8.
+Some filers place the financial statements after the last Item, "Item 16. Form
+10-K Summary": after the signature page (Qualcomm, Amgen, Dexcom) or just before
+it (Activision). Their first caption there ("Report of Independent Registered
+Public Accounting Firm" or "Index to Consolidated Financial Statements")
+switches back to Item 8. Nothing but exhibits and the financial statements can
+follow Item 16, so the caption is not a line of the Item 15 exhibit list.
 """
 
 import re
@@ -20,10 +24,18 @@ import re
 from .classify import SIGNATURE_STATEMENT, flatten
 
 # "Item 1A. Risk Factors", "ITEM 7:", "Item 8" alone, or "Item 2 Properties";
-# but not a sentence that starts with a reference, like "Item 7 of this Form 10-K"
-ITEM_HEADING = re.compile(r"^\s*(?:ITEM|Item)\s+(\d{1,2}[A-Ca-c]?)\s*(?:[.:\-–—]|$|\|\s*[A-Z]|[A-Z])")
-# A page listing this many distinct Items is a table of contents or an index
+# but not a sentence that starts with a reference, like "Item 7 of this Form 10-K".
+# The lookahead keeps the Item letter in the number: without it, "Item 1A of this
+# report" was read as the heading "Item 1" followed by the capital "A".
+ITEM_HEADING = re.compile(r"^\s*(?:ITEM|Item)\s+(\d{1,2}[A-Ca-c]?)(?![A-Ca-c])\s*(?:[.:\-–—]|$|\|\s*[A-Z]|[A-Z])")
+# A table of contents lists at least this many distinct Items...
 TOC_MIN_ITEMS = 4
+# ...and at least this share of its Item lines end with a page number ("Item 3. | Legal Proceedings | 36").
+# Measured on the 75 filings: contents pages 68-100%, body pages with short sections 0%.
+TOC_NUMBERED_SHARE = 0.5
+# A list this long is a table of contents even without page numbers (real ones list 19-22 Items)
+TOC_MANY_ITEMS = 15
+PAGE_NUMBER_AT_END = re.compile(r"(?:\||\s)\s*\d{1,3}\s*$")
 
 # Captions used without "Item N" by filers that reorder or restyle the 10-K.
 # Order matters: the longer, more specific captions go first.
@@ -50,8 +62,12 @@ def item_label(number: str) -> str:
 
 
 def is_toc_page(lines: list[str]) -> bool:
-    items = {m.group(1).upper() for l in lines if (m := ITEM_HEADING.match(l))}
-    return len(items) >= TOC_MIN_ITEMS
+    headings = [(m.group(1).upper(), l) for l in lines if (m := ITEM_HEADING.match(l))]
+    items = {item for item, _ in headings}
+    if len(items) < TOC_MIN_ITEMS:
+        return False
+    numbered = sum(1 for _, l in headings if PAGE_NUMBER_AT_END.search(l))
+    return numbered / len(headings) >= TOC_NUMBERED_SHARE or len(items) >= TOC_MANY_ITEMS
 
 
 def caption_item(line: str) -> str | None:
@@ -77,7 +93,7 @@ def label_lines(pages: list[list[str]]) -> list[list[str]]:
         toc = is_toc_page(lines)
         page_labels = []
         for line in lines:
-            if signed and FINANCIAL_STATEMENTS_START.match(line.split(" | ")[0].strip()):
+            if (signed or current == "Item 16") and FINANCIAL_STATEMENTS_START.match(line.split(" | ")[0].strip()):
                 current = "Item 8"
             elif not toc:
                 if has_items:

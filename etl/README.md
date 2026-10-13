@@ -84,7 +84,12 @@ A chunk:
 
 **Cleaning.** Running headers and footers (repeated at the top or bottom of many pages), page numbers and whitespace (`clean.py`). A line that ends in a hyphen is joined to the next one and keeps its hyphen: in 10-Ks those are compound words ("third-party", "COVID-19", "Form 10-K"), not words split by syllable.
 
-**Sections.** Numbered headings ("Item 1A. Risk Factors") are required by SEC Rule 12b-13. The table of contents is ignored, and so are sentences that merely start with a reference ("Item 7 of this Form 10-K…"). Filers without numbered headings get known captions mapped to Items (`sections.py`).
+**Sections.** Numbered headings ("Item 1A. Risk Factors") are required by SEC Rule 12b-13 (`sections.py`).
+
+- The table of contents is ignored. It is recognized because it lists many Items with their page numbers ("Item 3. | Legal Proceedings | 36"). A body page can also hold several short sections in a row (Items 1B to 4, or 10 to 14), but their headings carry no page numbers, so they count. Before this rule, those headings were dropped in 65 of the 75 filings, and Item 3 Legal Proceedings, for example, was labeled with the previous Item.
+- Sentences that merely start with a reference are not headings: "Item 7 of this Form 10-K…", "Item 1A of this report…".
+- Financial statements placed after the last Item ("Item 16. Form 10-K Summary"), before or after the signature page (Activision, eBay, IDEXX, Qualcomm, Amgen), are labeled Item 8.
+- Filers without numbered headings get known captions mapped to Items.
 
 **Chunks sized in tokens.** Size is measured with the embedding model's own tokenizer (`tokens.py`), so no chunk is silently truncated by BGE (512 tokens). Prose is cut by section, then into chunks that close at about 380 tokens, carry about 50 tokens of the previous chunk, never split a sentence, and never pass a hard cap of 440 tokens. The margin leaves room for the context header the index adds before embedding. Financial tables become their own chunks, rendered as Markdown with their title and column headers; a long table is split by rows within the same cap, repeating its header (`chunk.py`). Only lines that look like a title or a column header are pulled above a table: the end of a prose sentence stays with its paragraph.
 
