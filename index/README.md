@@ -79,6 +79,9 @@ The pipeline is plain Python run in Docker, with no notebooks. Colab is only a t
 - **The index matches the chunk files exactly.** After writing a document, any older chunk of that document is deleted, so re-chunking leaves no orphans. A full load (no `--doc`) also removes documents that no longer have a `.jsonl`, for example a filing the ETL now skips.
 - **Embeddings are cached by content.** `data/embeddings/<model>/<doc_id>.npz` stores one vector per exact embedded text. Reloading only embeds new or changed chunks; a reload served fully from cache doesn't even load the model.
 - **A wrong index is never reused silently.** If `filinglens-chunks` exists with a different mapping (another model's dimensions, Haystack's default mapping, a missing field), the loader stops and asks for `--recreate`.
+- **Two index settings are applied on every run** (`INDEX_SETTINGS` in `src/documents.py`). Both can change on an existing index, so nothing is reloaded:
+  - `number_of_replicas: 0`: a single node can't hold a replica, and with the default of 1 the cluster stays yellow.
+  - `query.default_field: content`: Haystack's BM25 retriever sends a query that names no field, which by default searches every field, metadata included. The query "AAPL" matched every chunk of `AAPL_2019_10K`, because all of them carry the ticker; with this setting, only the 2 whose text mentions it. Found by Felipe's verification (`search-index/VERIFICATION.md`).
 
 ## Settings shared with search and the API
 

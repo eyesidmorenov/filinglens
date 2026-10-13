@@ -46,3 +46,21 @@ def test_index_matches_the_chunk_files_exactly(es):
     indexed = {b["key"]: b["doc_count"] for b in agg}
     expected = {f.stem: len(read_chunks(f)) for f in chunk_files}
     assert indexed == expected
+
+
+def test_index_has_the_expected_settings(es):
+    # Applied by the loader on every run (INDEX_SETTINGS)
+    settings = es.indices.get_settings(index=config.ES_INDEX)[config.ES_INDEX]["settings"]["index"]
+    assert settings["number_of_replicas"] == "0"
+    assert settings["query"]["default_field"] == ["content"]
+
+
+def test_bm25_without_fields_searches_only_the_text(es):
+    # A query with no field (as Haystack's BM25 retriever sends it) must not match metadata:
+    # every 2019 Apple chunk has ticker "AAPL", but only some mention it in their text
+    query = {"bool": {"must": {"multi_match": {"query": "AAPL"}},
+                      "filter": [{"term": {"ticker": "AAPL"}}, {"term": {"fiscal_year": 2019}}]}}
+    total = es.count(index=config.ES_INDEX, query={"bool": {"filter": query["bool"]["filter"]}})["count"]
+    if total == 0:
+        pytest.skip("AAPL 2019 not loaded")
+    assert es.count(index=config.ES_INDEX, query=query)["count"] < total
