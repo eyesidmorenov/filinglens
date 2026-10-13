@@ -121,6 +121,7 @@ filinglens/
 ├── index/          Elasticsearch, embeddings, loading
 ├── search/         Retrieval pipeline and evaluation
 ├── search-index/   Read-only index health, stats and filters
+├── yahoo-finance/  Yahoo Finance coverage check (research, not in the chatbot yet)
 ├── generation/     Prompt and Claude integration
 ├── api/            FastAPI
 ├── ui/             Chainlit
