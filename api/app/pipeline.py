@@ -50,7 +50,8 @@ def get_generator():
     from haystack.utils import Secret
     from tenk_answer import AnswerGenerator
 
-    return AnswerGenerator(api_key=Secret.from_env_var("ANTHROPIC_API_KEY"))
+        # temperature=None: the current Anthropic SDK no longer accepts this parameter
+    return AnswerGenerator(api_key=Secret.from_env_var("ANTHROPIC_API_KEY"), temperature=None)
 
 
 def search(question: str, ticker: str, fiscal_year: int) -> list[dict]:
