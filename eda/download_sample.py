@@ -1,16 +1,17 @@
 """
-Descarga una muestra determinista de documentos desde S3.
+Downloads a deterministic sample of filings from S3.
 
-Determinista significa que siempre baja exactamente los mismos archivos,
-sin importar quién lo corra ni cuándo. Así todo el equipo trabaja con la
-misma muestra y los resultados son comparables.
+Deterministic means it always downloads exactly the same files, no matter
+who runs it or when. That way the whole team works with the same sample
+and the results are comparable.
 
-No vuelve a descargar lo que ya está en disco, así que se puede correr
-las veces que haga falta sin gastar transferencia.
+It never downloads again what is already on disk, so it can be run as
+many times as needed without wasting transfer.
 
-Uso:
-    python download_sample.py              # muestra base, 5 empresas
-    python download_sample.py --check      # solo verifica, no descarga
+Usage:
+    python download_sample.py                                  # base sample, 5 companies
+    python download_sample.py --check                          # only checks, downloads nothing
+    python download_sample.py --companies eda/companies.csv    # companies from a list
 """
 
 import argparse
@@ -28,16 +29,17 @@ load_dotenv(Path(__file__).parent / ".env")
 BUCKET = "anyoneai-datasets"
 PREFIX = "nasdaq_annual_reports/"
 
-# Carpeta de salida, relativa a la raíz del proyecto
-DESTINO = Path(__file__).parent.parent / "data" / "raw"
-INVENTARIO = DESTINO / "inventario.csv"
+# Output folder, relative to the project root
+DESTINATION = Path(__file__).parent.parent / "data" / "raw"
+# The file name is a data contract: the ETL reads data/raw/inventario.csv
+INVENTORY = DESTINATION / "inventario.csv"
 
-# --- La muestra. Fija a propósito. ---
-# El alcance del proyecto son estos tres años: el dataset se corta en 2021.
-ANIOS = [2019, 2020, 2021]
+# --- The sample. Fixed on purpose. ---
+# The project scope is these three years: the dataset ends in 2021.
+YEARS = [2019, 2020, 2021]
 
-# carpeta en S3 -> ticker esperado
-EMPRESAS = {
+# S3 folder -> expected ticker
+COMPANIES = {
     "apple-inc": "AAPL",
     "nvidia-corporation": "NVDA",
     "microsoft-corporation": "MSFT",
@@ -45,15 +47,15 @@ EMPRESAS = {
     "intel-corporation": "INTC",
 }
 
-# Archivos que hay que ignorar siempre
-IGNORAR = {".DS_Store"}
+# Files to always ignore
+IGNORE = {".DS_Store"}
 
 
 def get_client():
     key = os.getenv("AWS_ACCESS_KEY_ID")
     secret = os.getenv("AWS_SECRET_ACCESS_KEY")
     if not key or not secret:
-        print("ERROR: faltan credenciales. Revisa que exista eda/.env con las llaves.")
+        print("ERROR: missing credentials. Check that eda/.env exists with the keys.")
         sys.exit(1)
     return boto3.client(
         "s3",
@@ -63,162 +65,162 @@ def get_client():
     )
 
 
-# NASDAQ_AAPL_2019.pdf, y la variante con sufijo hash que aparece en 45 archivos:
+# NASDAQ_AAPL_2019.pdf, and the variant with a hash suffix found in 45 files:
 # NASDAQ_ICUI_2016_be053643da474abb9e048daf1ac9aa5f.pdf
-# Es el mismo patrón que usa explore_s3.py.
-NOMBRE = re.compile(
-    r"^(?P<exchange>[A-Za-z]+)_(?P<ticker>[^_/]+)_(?P<anio>\d{4})"
-    r"(?:_(?P<sufijo>[0-9a-f]{32}))?\.pdf$",
+# Same pattern used by explore_s3.py.
+FILE_NAME = re.compile(
+    r"^(?P<exchange>[A-Za-z]+)_(?P<ticker>[^_/]+)_(?P<year>\d{4})"
+    r"(?:_(?P<suffix>[0-9a-f]{32}))?\.pdf$",
     re.IGNORECASE,
 )
 
 
-def listar_empresa(client, carpeta):
+def list_company(client, folder):
     """
-    Lista los archivos de una empresa. Devuelve {año: (key, size)}.
+    Lists the files of one company. Returns {year: (key, size)}.
 
-    Si un año aparece dos veces (el mismo archivo subido con y sin hash),
-    se queda con el que no tiene hash, y si ambos lo tienen, con el primero
-    en orden alfabético. Así la elección es siempre la misma.
+    If a year appears twice (the same file uploaded with and without a hash),
+    it keeps the one without the hash, and if both have it, the first one in
+    alphabetical order. That way the choice is always the same.
     """
-    candidatos = {}
+    candidates = {}
     paginator = client.get_paginator("list_objects_v2")
-    for page in paginator.paginate(Bucket=BUCKET, Prefix=f"{PREFIX}{carpeta}/"):
+    for page in paginator.paginate(Bucket=BUCKET, Prefix=f"{PREFIX}{folder}/"):
         for obj in page.get("Contents", []):
-            nombre = obj["Key"].split("/")[-1]
-            if nombre in IGNORAR:
+            name = obj["Key"].split("/")[-1]
+            if name in IGNORE:
                 continue
-            m = NOMBRE.match(nombre)
+            m = FILE_NAME.match(name)
             if not m:
                 continue
-            anio = int(m["anio"])
-            if 1990 <= anio <= 2025:
-                candidatos.setdefault(anio, []).append(
-                    (m["sufijo"] is not None, obj["Key"], obj["Size"])
+            year = int(m["year"])
+            if 1990 <= year <= 2025:
+                candidates.setdefault(year, []).append(
+                    (m["suffix"] is not None, obj["Key"], obj["Size"])
                 )
 
-    encontrados = {}
-    for anio, opciones in candidatos.items():
-        opciones.sort()
-        if len(opciones) > 1:
-            print(f"      ojo: {carpeta} {anio} tiene {len(opciones)} archivos, se usa {opciones[0][1].split('/')[-1]}")
-        _, key, size = opciones[0]
-        encontrados[anio] = (key, size)
-    return encontrados
+    found = {}
+    for year, options in candidates.items():
+        options.sort()
+        if len(options) > 1:
+            print(f"      note: {folder} {year} has {len(options)} files, using {options[0][1].split('/')[-1]}")
+        _, key, size = options[0]
+        found[year] = (key, size)
+    return found
 
 
-def parsear_metadata(key):
-    """Saca empresa, exchange, ticker y año de la ruta. Sin abrir el PDF."""
-    partes = key.split("/")
-    m = NOMBRE.match(partes[-1])
+def parse_metadata(key):
+    """Gets company, exchange, ticker and year from the path. Without opening the PDF."""
+    parts = key.split("/")
+    m = FILE_NAME.match(parts[-1])
     if not m:
         return None
     return {
-        "empresa": partes[-2],
+        "company": parts[-2],
         "exchange": m["exchange"].upper(),
         "ticker": m["ticker"].upper(),
-        "anio": int(m["anio"]),
+        "year": int(m["year"]),
     }
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true",
-                    help="solo verifica cobertura, no descarga nada")
+                    help="only check coverage, download nothing")
     ap.add_argument("--companies", type=Path,
-                    help="CSV con columnas company,ticker (ej. eda/companies.csv). Sin esto, usa la muestra de 5")
+                    help="CSV with columns company,ticker (e.g. eda/companies.csv). Without it, uses the 5-company sample")
     args = ap.parse_args()
 
-    global EMPRESAS
+    global COMPANIES
     if args.companies:
         with open(args.companies, encoding="utf-8") as f:
-            EMPRESAS = {fila["company"]: fila["ticker"] for fila in csv.DictReader(f)}
-        print(f"Empresas leídas de {args.companies}")
+            COMPANIES = {row["company"]: row["ticker"] for row in csv.DictReader(f)}
+        print(f"Companies read from {args.companies}")
 
     client = get_client()
-    DESTINO.mkdir(parents=True, exist_ok=True)
+    DESTINATION.mkdir(parents=True, exist_ok=True)
 
-    print(f"Muestra: {len(EMPRESAS)} empresas x {len(ANIOS)} años = "
-          f"{len(EMPRESAS) * len(ANIOS)} documentos esperados")
-    print(f"Destino: {DESTINO}\n")
+    print(f"Sample: {len(COMPANIES)} companies x {len(YEARS)} years = "
+          f"{len(COMPANIES) * len(YEARS)} expected documents")
+    print(f"Destination: {DESTINATION}\n")
 
-    plan = []      # lo que sí vamos a bajar
-    faltantes = [] # lo que no existe en el bucket
+    plan = []     # what we will download
+    missing = []  # what does not exist in the bucket
 
-    # --- 1. Verificar cobertura antes de bajar nada ---
-    print("Verificando cobertura...")
-    for carpeta, ticker_esperado in EMPRESAS.items():
-        disponibles = listar_empresa(client, carpeta)
-        if not disponibles:
-            print(f"  {carpeta:<28} NO ENCONTRADA en el bucket")
-            faltantes.extend((carpeta, a, "empresa no existe") for a in ANIOS)
+    # --- 1. Check coverage before downloading anything ---
+    print("Checking coverage...")
+    for folder, expected_ticker in COMPANIES.items():
+        available = list_company(client, folder)
+        if not available:
+            print(f"  {folder:<28} NOT FOUND in the bucket")
+            missing.extend((folder, y, "company does not exist") for y in YEARS)
             continue
 
-        presentes = [a for a in ANIOS if a in disponibles]
-        ausentes = [a for a in ANIOS if a not in disponibles]
+        present = [y for y in YEARS if y in available]
+        absent = [y for y in YEARS if y not in available]
 
-        estado = "completa" if not ausentes else f"faltan {ausentes}"
-        otros = sorted(set(disponibles) - set(ANIOS))
-        extra = f"  (también tiene {otros})" if otros else ""
-        print(f"  {carpeta:<28} {len(presentes)}/{len(ANIOS)} {estado}{extra}")
+        status = "complete" if not absent else f"missing {absent}"
+        others = sorted(set(available) - set(YEARS))
+        extra = f"  (also has {others})" if others else ""
+        print(f"  {folder:<28} {len(present)}/{len(YEARS)} {status}{extra}")
 
-        for anio in presentes:
-            key, size = disponibles[anio]
-            meta = parsear_metadata(key)
+        for year in present:
+            key, size = available[year]
+            meta = parse_metadata(key)
             if not meta:
-                print(f"      nombre no parseable: {key}")
+                print(f"      unparseable name: {key}")
                 continue
-            if meta["ticker"] != ticker_esperado:
-                print(f"      ojo: ticker {meta['ticker']} != {ticker_esperado} esperado")
+            if meta["ticker"] != expected_ticker:
+                print(f"      note: ticker {meta['ticker']} != expected {expected_ticker}")
             plan.append({**meta, "key": key, "size": size})
-        for anio in ausentes:
-            faltantes.append((carpeta, anio, "año no disponible"))
+        for year in absent:
+            missing.append((folder, year, "year not available"))
 
-    print(f"\nDisponibles para descargar: {len(plan)}")
-    if faltantes:
-        print(f"Faltantes: {len(faltantes)}")
-        for c, a, motivo in faltantes:
-            print(f"  {c} {a}: {motivo}")
+    print(f"\nAvailable to download: {len(plan)}")
+    if missing:
+        print(f"Missing: {len(missing)}")
+        for c, y, reason in missing:
+            print(f"  {c} {y}: {reason}")
 
     if args.check:
-        print("\nModo --check: no se descargó nada.")
+        print("\n--check mode: nothing was downloaded.")
         return
 
-    # --- 2. Descargar lo que falte en disco ---
-    print("\nDescargando...")
-    filas, bajados, saltados = [], 0, 0
+    # --- 2. Download what is not on disk yet ---
+    print("\nDownloading...")
+    rows, downloaded, skipped = [], 0, 0
     for item in plan:
-        local = DESTINO / f"{item['ticker']}_{item['anio']}.pdf"
+        local = DESTINATION / f"{item['ticker']}_{item['year']}.pdf"
         if local.exists() and local.stat().st_size == item["size"]:
-            saltados += 1
+            skipped += 1
         else:
             client.download_file(BUCKET, item["key"], str(local))
-            bajados += 1
+            downloaded += 1
             print(f"  {local.name:<20} {item['size'] / 1024**2:6.1f} MB")
 
-        filas.append({
-            "doc_id": f"{item['ticker']}_{item['anio']}_10K",
-            "company": item["empresa"],
+        rows.append({
+            "doc_id": f"{item['ticker']}_{item['year']}_10K",
+            "company": item["company"],
             "ticker": item["ticker"],
-            "fiscal_year": item["anio"],
+            "fiscal_year": item["year"],
             "exchange": item["exchange"],
             "s3_key": item["key"],
             "local_path": f"data/raw/{local.name}",
             "size_mb": round(item["size"] / 1024**2, 2),
         })
 
-    # --- 3. Inventario ---
-    filas.sort(key=lambda r: (r["ticker"], r["fiscal_year"]))
-    with open(INVENTARIO, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(filas[0].keys()))
+    # --- 3. Inventory ---
+    rows.sort(key=lambda r: (r["ticker"], r["fiscal_year"]))
+    with open(INVENTORY, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
-        w.writerows(filas)
+        w.writerows(rows)
 
-    peso = sum(r["size_mb"] for r in filas)
-    print(f"\nDescargados ahora: {bajados}   ya estaban: {saltados}")
-    print(f"Total en disco: {len(filas)} documentos, {peso:.1f} MB")
-    print(f"Inventario: {INVENTARIO}")
-    print("\nListo. La extracción de texto puede arrancar desde data/raw/")
+    total_mb = sum(r["size_mb"] for r in rows)
+    print(f"\nDownloaded now: {downloaded}   already there: {skipped}")
+    print(f"Total on disk: {len(rows)} documents, {total_mb:.1f} MB")
+    print(f"Inventory: {INVENTORY}")
+    print("\nDone. Text extraction can start from data/raw/")
 
 
 if __name__ == "__main__":

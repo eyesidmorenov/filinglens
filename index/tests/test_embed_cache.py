@@ -1,5 +1,7 @@
 """The embedding cache, with a fake embedder: no model download needed."""
 
+import json
+
 import numpy as np
 import pytest
 from haystack import Document
@@ -58,6 +60,36 @@ def test_changed_text_with_the_same_id_is_embedded_again(fake):
     assert computed == 1
     assert second[0].embedding == first[0].embedding
     assert second[1].embedding != first[1].embedding
+
+
+def write_chunks(data_dir, doc_id: str, texts: list[str]) -> None:
+    folder = data_dir / "chunks"
+    folder.mkdir(parents=True, exist_ok=True)
+    lines = [json.dumps({**BASE, "doc_id": doc_id, "chunk_id": f"{doc_id}_p8_c{i}", "text": t})
+             for i, t in enumerate(texts, start=1)]
+    (folder / f"{doc_id}.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def test_embed_only_fills_the_cache_without_elasticsearch(fake, tmp_path, monkeypatch, capsys):
+    def no_store(*args, **kwargs):
+        raise AssertionError("--embed-only must not connect to Elasticsearch")
+
+    monkeypatch.setattr(load, "make_store", no_store)
+    monkeypatch.setattr(load, "count_over_limit", lambda documents: 0)
+    write_chunks(tmp_path, "AAPL_2019_10K", ["Supply may fail.", "Demand may drop."])
+
+    assert load.main(["--embed-only"]) == 0
+    assert load.cache_path("AAPL_2019_10K").exists()
+    assert "2 embedded now" in capsys.readouterr().out
+
+    # A second run, or the loader later, finds everything in the cache
+    assert load.main(["--embed-only"]) == 0
+    assert "0 embedded now, 2 from cache" in capsys.readouterr().out
+
+
+def test_embed_only_refuses_index_options(fake):
+    with pytest.raises(SystemExit):
+        load.main(["--embed-only", "--recreate"])
 
 
 def test_broken_cache_is_ignored(fake):

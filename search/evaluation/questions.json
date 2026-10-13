@@ -1,0 +1,927 @@
+[
+  {
+    "id": "Q01",
+    "question": "What products, services, and distribution channels did Apple describe in fiscal 2019?",
+    "ticker": "AAPL",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q02",
+    "question": "What were Apple's total net sales and net income in fiscal 2020?",
+    "ticker": "AAPL",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q03",
+    "question": "What did Apple report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "AAPL",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q04",
+    "question": "What quantitative and qualitative market risks did Adobe disclose in fiscal 2019?",
+    "ticker": "ADBE",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q05",
+    "question": "What risks did Adobe identify regarding competition, cloud services, and cybersecurity in fiscal 2020?",
+    "ticker": "ADBE",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q06",
+    "question": "What were Adobe's total revenue and Digital Media revenue in fiscal 2021?",
+    "ticker": "ADBE",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q07",
+    "question": "What were Autodesk's total net revenue and net income in fiscal 2019?",
+    "ticker": "ADSK",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q08",
+    "question": "What conclusion did Autodesk reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "ADSK",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q09",
+    "question": "What factors drove Autodesk's subscription revenue and operating results in fiscal 2021?",
+    "ticker": "ADSK",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q10",
+    "question": "What principal products and product candidates did Amgen describe in fiscal 2019?",
+    "ticker": "AMGN",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q11",
+    "question": "What were Amgen's total product sales and net income in fiscal 2020?",
+    "ticker": "AMGN",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q12",
+    "question": "What did Amgen report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "AMGN",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q13",
+    "question": "What quantitative and qualitative market risks did Activision Blizzard disclose in fiscal 2019?",
+    "ticker": "ATVI",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q14",
+    "question": "What risks did Activision Blizzard identify regarding game development, consumer preferences, and online platforms in fiscal 2020?",
+    "ticker": "ATVI",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q15",
+    "question": "What were Activision Blizzard's consolidated net revenues and net income in fiscal 2021?",
+    "ticker": "ATVI",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q16",
+    "question": "What were Comcast's consolidated revenue and net income in fiscal 2019?",
+    "ticker": "CMCSA",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q17",
+    "question": "What conclusion did Comcast reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "CMCSA",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q18",
+    "question": "What factors drove Comcast's revenue and operating results across its major businesses in fiscal 2021?",
+    "ticker": "CMCSA",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q19",
+    "question": "What consulting, technology, and operations services did Cognizant describe in fiscal 2019?",
+    "ticker": "CTSH",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q20",
+    "question": "What were Cognizant's revenues and net income in fiscal 2020?",
+    "ticker": "CTSH",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q21",
+    "question": "What did Cognizant report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "CTSH",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q22",
+    "question": "What quantitative and qualitative market risks did DexCom disclose in fiscal 2019?",
+    "ticker": "DXCM",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q23",
+    "question": "What risks did DexCom identify regarding product quality, regulation, and competition in fiscal 2020?",
+    "ticker": "DXCM",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q24",
+    "question": "What were DexCom's revenue and gross profit in fiscal 2021?",
+    "ticker": "DXCM",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q25",
+    "question": "What were Electronic Arts' net revenue and net income in fiscal 2019?",
+    "ticker": "EA",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q26",
+    "question": "What conclusion did Electronic Arts reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "EA",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q27",
+    "question": "What factors drove Electronic Arts' net bookings, live services, and operating results in fiscal 2021?",
+    "ticker": "EA",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q28",
+    "question": "How did eBay describe its marketplace, buyers, sellers, and principal services in fiscal 2019?",
+    "ticker": "EBAY",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q29",
+    "question": "What were eBay's net revenues and net income in fiscal 2020?",
+    "ticker": "EBAY",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q30",
+    "question": "What did eBay report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "EBAY",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q31",
+    "question": "What quantitative and qualitative market risks did Facebook disclose in fiscal 2019?",
+    "ticker": "FB",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q32",
+    "question": "What risks did Facebook identify regarding privacy, data use, regulation, and user engagement in fiscal 2020?",
+    "ticker": "FB",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q33",
+    "question": "What were Facebook's revenue and net income in fiscal 2021?",
+    "ticker": "FB",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q34",
+    "question": "What were Gilead's total product sales and net income in fiscal 2019?",
+    "ticker": "GILD",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q35",
+    "question": "What conclusion did Gilead reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "GILD",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q36",
+    "question": "What factors drove Gilead's product sales and operating results in fiscal 2021?",
+    "ticker": "GILD",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q37",
+    "question": "What diagnostic products, instruments, and services did IDEXX describe in fiscal 2019?",
+    "ticker": "IDXX",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q38",
+    "question": "What were IDEXX's revenue and operating income in fiscal 2020?",
+    "ticker": "IDXX",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q39",
+    "question": "What did IDEXX report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "IDXX",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q40",
+    "question": "What quantitative and qualitative market risks did Illumina disclose in fiscal 2019?",
+    "ticker": "ILMN",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q41",
+    "question": "What risks did Illumina identify regarding sequencing products, regulation, and competition in fiscal 2020?",
+    "ticker": "ILMN",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q42",
+    "question": "What were Illumina's revenue and net income or loss in fiscal 2021?",
+    "ticker": "ILMN",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q43",
+    "question": "What were KLA's total revenues and net income in fiscal 2019?",
+    "ticker": "KLAC",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q44",
+    "question": "What conclusion did KLA reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "KLAC",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q45",
+    "question": "What factors drove KLA's revenue, gross margin, and operating results in fiscal 2021?",
+    "ticker": "KLAC",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q46",
+    "question": "What wafer fabrication equipment, products, and services did Lam Research describe in fiscal 2019?",
+    "ticker": "LRCX",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q47",
+    "question": "What were Lam Research's revenue and net income in fiscal 2020?",
+    "ticker": "LRCX",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q48",
+    "question": "What did Lam Research report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "LRCX",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q49",
+    "question": "What quantitative and qualitative market risks did Marriott disclose in fiscal 2019?",
+    "ticker": "MAR",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q50",
+    "question": "What risks did Marriott identify regarding lodging demand, its franchise model, and cybersecurity in fiscal 2020?",
+    "ticker": "MAR",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q51",
+    "question": "What were Marriott's total revenues and net income in fiscal 2021?",
+    "ticker": "MAR",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q52",
+    "question": "What were Mondelez's net revenues and net earnings in fiscal 2019?",
+    "ticker": "MDLZ",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q53",
+    "question": "What conclusion did Mondelez reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "MDLZ",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q54",
+    "question": "What factors drove Mondelez's net revenues and operating income in fiscal 2021?",
+    "ticker": "MDLZ",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q55",
+    "question": "What platforms, products, and target markets did NVIDIA describe in fiscal 2019?",
+    "ticker": "NVDA",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q56",
+    "question": "What were NVIDIA's revenue and gross margin in fiscal 2020?",
+    "ticker": "NVDA",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 15",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q57",
+    "question": "What did NVIDIA report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "NVDA",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q58",
+    "question": "What quantitative and qualitative market risks did O'Reilly Automotive disclose in fiscal 2019?",
+    "ticker": "ORLY",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q59",
+    "question": "What risks did O'Reilly Automotive identify regarding competition, inventory, distribution, and workforce in fiscal 2020?",
+    "ticker": "ORLY",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q60",
+    "question": "What were O'Reilly Automotive's sales and net income in fiscal 2021?",
+    "ticker": "ORLY",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q61",
+    "question": "What were Paychex's total service revenue and net income in fiscal 2019?",
+    "ticker": "PAYX",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q62",
+    "question": "What conclusion did Paychex reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "PAYX",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q63",
+    "question": "What factors drove Paychex's service revenue and operating results in fiscal 2021?",
+    "ticker": "PAYX",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q64",
+    "question": "What products and licensing activities did Qualcomm describe for QCT and QTL in fiscal 2019?",
+    "ticker": "QCOM",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q65",
+    "question": "What were Qualcomm's revenues and net income in fiscal 2020?",
+    "ticker": "QCOM",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q66",
+    "question": "What did Qualcomm report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "QCOM",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q67",
+    "question": "What quantitative and qualitative market risks did Starbucks disclose in fiscal 2019?",
+    "ticker": "SBUX",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q68",
+    "question": "What risks did Starbucks identify regarding store operations, commodity costs, labor, and competition in fiscal 2020?",
+    "ticker": "SBUX",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q69",
+    "question": "What were Starbucks' consolidated net revenues and operating income in fiscal 2021?",
+    "ticker": "SBUX",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q70",
+    "question": "What were Texas Instruments' revenue and net income in fiscal 2019?",
+    "ticker": "TXN",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q71",
+    "question": "What conclusion did Texas Instruments reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "TXN",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q72",
+    "question": "What factors drove Texas Instruments' revenue and operating profit in fiscal 2021?",
+    "ticker": "TXN",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q73",
+    "question": "What approved medicines and pipeline programs did Vertex describe in fiscal 2019?",
+    "ticker": "VRTX",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q74",
+    "question": "What were Vertex's product revenues and net income in fiscal 2020?",
+    "ticker": "VRTX",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": []
+  },
+  {
+    "id": "Q75",
+    "question": "What did Vertex report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "VRTX",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": []
+  }
+]

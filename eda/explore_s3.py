@@ -1,14 +1,14 @@
 """
-Explora el bucket de S3 sin descargar nada.
+Explores the S3 bucket without downloading anything.
 
-Objetivo: entender cómo está organizado el dataset antes de decidir
-qué muestra bajar y cómo extraer la metadata de cada documento.
+Goal: understand how the dataset is organized before deciding which
+sample to download and how to extract the metadata of each document.
 
-Salidas (para que el notebook lea datos medidos, no números copiados):
-    data/eda/bucket_inventory.csv   una fila por archivo, metadata parseada de la ruta
-    data/eda/bucket_unparsed.csv    rutas que no siguen la convención de nombres
+Outputs (so the notebook reads measured data, not copied numbers):
+    data/eda/bucket_inventory.csv   one row per file, metadata parsed from the path
+    data/eda/bucket_unparsed.csv    paths that do not follow the naming convention
 
-Uso:
+Usage:
     python eda/explore_s3.py
 """
 
@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "eda"
 
 # nasdaq_annual_reports/apple-inc/NASDAQ_AAPL_2019.pdf
-# Variante en 48 archivos: NASDAQ_ICUI_2016_<hash de 32 hex>.pdf
+# Variant in 48 files: NASDAQ_ICUI_2016_<32-hex hash>.pdf
 KEY_PATTERN = re.compile(
     r"^nasdaq_annual_reports/"
     r"(?P<company>[^/]+)/"
@@ -43,13 +43,13 @@ KEY_PATTERN = re.compile(
 
 
 def get_client():
-    """Cliente de S3. Usa las llaves del .env si existen, si no prueba anonimo."""
+    """S3 client. Uses the keys in .env if they exist; otherwise tries anonymous access."""
     key = os.getenv("AWS_ACCESS_KEY_ID")
     secret = os.getenv("AWS_SECRET_ACCESS_KEY")
     region = os.getenv("AWS_REGION", "us-east-1")
 
     if key and secret:
-        print("Conectando con credenciales del .env")
+        print("Connecting with the credentials in .env")
         return boto3.client(
             "s3",
             aws_access_key_id=key,
@@ -57,31 +57,31 @@ def get_client():
             region_name=region,
         )
 
-    print("Sin credenciales en .env, intentando acceso anonimo")
+    print("No credentials in .env, trying anonymous access")
     return boto3.client("s3", config=Config(signature_version=UNSIGNED), region_name=region)
 
 
-def listar_todo(client, limite=None):
-    """Lista los objetos del prefijo. limite=None trae todos."""
+def list_all(client, limit=None):
+    """Lists the objects under the prefix. limit=None returns all of them."""
     paginator = client.get_paginator("list_objects_v2")
-    objetos = []
+    objects = []
     for page in paginator.paginate(Bucket=BUCKET, Prefix=PREFIX):
         for obj in page.get("Contents", []):
             if obj["Key"].endswith("/"):
                 continue
-            objetos.append({"key": obj["Key"], "size": obj["Size"]})
-            if limite and len(objetos) >= limite:
-                return objetos
-    return objetos
+            objects.append({"key": obj["Key"], "size": obj["Size"]})
+            if limit and len(objects) >= limit:
+                return objects
+    return objects
 
 
-def parsear(objetos):
-    """Separa las rutas que siguen la convención de las que no."""
-    filas, sueltas = [], []
-    for o in objetos:
+def parse(objects):
+    """Separates the paths that follow the convention from the ones that don't."""
+    rows, unparsed = [], []
+    for o in objects:
         m = KEY_PATTERN.match(o["key"])
         if m:
-            filas.append({
+            rows.append({
                 "s3_key": o["key"],
                 "company": m["company"],
                 "exchange": m["exchange"].upper(),
@@ -91,113 +91,113 @@ def parsear(objetos):
                 "has_hash_suffix": m["suffix"] is not None,
             })
         else:
-            sueltas.append({"s3_key": o["key"], "size_mb": round(o["size"] / 1024**2, 3)})
-    return filas, sueltas
+            unparsed.append({"s3_key": o["key"], "size_mb": round(o["size"] / 1024**2, 3)})
+    return rows, unparsed
 
 
-def guardar(filas, sueltas):
+def save(rows, unparsed):
     OUT.mkdir(parents=True, exist_ok=True)
 
     inv_path = OUT / "bucket_inventory.csv"
     with open(inv_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["s3_key", "company", "exchange", "ticker", "fiscal_year", "size_mb", "has_hash_suffix"])
         w.writeheader()
-        w.writerows(filas)
+        w.writerows(rows)
 
-    sueltas_path = OUT / "bucket_unparsed.csv"
-    with open(sueltas_path, "w", newline="", encoding="utf-8") as f:
+    unparsed_path = OUT / "bucket_unparsed.csv"
+    with open(unparsed_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["s3_key", "size_mb"])
         w.writeheader()
-        w.writerows(sueltas)
+        w.writerows(unparsed)
 
-    print(f"\nGuardado: {inv_path.relative_to(ROOT)}  ({len(filas):,} filas)")
-    print(f"Guardado: {sueltas_path.relative_to(ROOT)}  ({len(sueltas):,} filas)")
+    print(f"\nSaved: {inv_path.relative_to(ROOT)}  ({len(rows):,} rows)")
+    print(f"Saved: {unparsed_path.relative_to(ROOT)}  ({len(unparsed):,} rows)")
 
 
-def analizar(objetos, filas, sueltas):
-    total = len(objetos)
-    peso_total = sum(o["size"] for o in objetos)
+def analyze(objects, rows, unparsed):
+    total = len(objects)
+    total_size = sum(o["size"] for o in objects)
 
     print("\n" + "=" * 70)
-    print(f"ARCHIVOS: {total:,}")
-    print(f"PESO TOTAL: {peso_total / 1024**3:.2f} GB")
+    print(f"FILES: {total:,}")
+    print(f"TOTAL SIZE: {total_size / 1024**3:.2f} GB")
     if total:
-        print(f"PESO PROMEDIO: {peso_total / total / 1024**2:.2f} MB por archivo")
+        print(f"AVERAGE SIZE: {total_size / total / 1024**2:.2f} MB per file")
     print("=" * 70)
 
-    # --- Extensiones ---
-    ext = Counter(os.path.splitext(o["key"])[1].lower() or "(sin extension)" for o in objetos)
-    print("\nEXTENSIONES")
+    # --- Extensions ---
+    ext = Counter(os.path.splitext(o["key"])[1].lower() or "(no extension)" for o in objects)
+    print("\nEXTENSIONS")
     for e, n in ext.most_common(10):
         print(f"  {e:<20} {n:>8,}")
 
-    # --- Profundidad de carpetas ---
-    prof = Counter(o["key"].count("/") for o in objetos)
-    print("\nNIVELES DE CARPETA (incluye el prefijo base)")
-    for p, n in sorted(prof.items()):
-        print(f"  {p} niveles        {n:>8,}")
+    # --- Folder depth ---
+    depth = Counter(o["key"].count("/") for o in objects)
+    print("\nFOLDER LEVELS (includes the base prefix)")
+    for d, n in sorted(depth.items()):
+        print(f"  {d} levels         {n:>8,}")
 
-    # --- Convención de nombres ---
-    print("\nCONVENCION DE NOMBRES")
-    print(f"  La siguen       {len(filas):>8,}")
-    print(f"  No la siguen    {len(sueltas):>8,}")
-    for s in sueltas[:10]:
+    # --- Naming convention ---
+    print("\nNAMING CONVENTION")
+    print(f"  Follow it       {len(rows):>8,}")
+    print(f"  Don't follow it {len(unparsed):>8,}")
+    for s in unparsed[:10]:
         print(f"    {s['s3_key']}")
-    if len(sueltas) > 10:
-        print(f"    ... y {len(sueltas) - 10:,} mas (ver bucket_unparsed.csv)")
+    if len(unparsed) > 10:
+        print(f"    ... and {len(unparsed) - 10:,} more (see bucket_unparsed.csv)")
 
-    # --- Empresas ---
-    empresas = {f["company"] for f in filas}
-    print(f"\nEMPRESAS DISTINTAS: {len(empresas):,}")
+    # --- Companies ---
+    companies = {r["company"] for r in rows}
+    print(f"\nDISTINCT COMPANIES: {len(companies):,}")
 
-    # --- Años: uno por archivo, tomado del nombre ---
-    anios = Counter(f["fiscal_year"] for f in filas)
-    print("\nAÑO FISCAL POR ARCHIVO")
-    for a, n in sorted(anios.items()):
-        print(f"  {a}   {n:>8,}")
-    print(f"  suma  {sum(anios.values()):>8,}")
+    # --- Years: one per file, taken from the name ---
+    years = Counter(r["fiscal_year"] for r in rows)
+    print("\nFISCAL YEAR PER FILE")
+    for y, n in sorted(years.items()):
+        print(f"  {y}   {n:>8,}")
+    print(f"  sum   {sum(years.values()):>8,}")
 
-    # --- Sufijo hash ---
-    con_hash = sum(f["has_hash_suffix"] for f in filas)
-    print(f"\nCON SUFIJO HASH: {con_hash:,}")
+    # --- Hash suffix ---
+    with_hash = sum(r["has_hash_suffix"] for r in rows)
+    print(f"\nWITH HASH SUFFIX: {with_hash:,}")
 
-    # --- Duplicados: mismo ticker y año mas de una vez ---
-    pares = Counter((f["ticker"], f["fiscal_year"]) for f in filas)
-    dups = {k: n for k, n in pares.items() if n > 1}
-    print(f"\nDUPLICADOS ticker+año: {len(dups):,}")
-    for (t, a), n in list(dups.items())[:10]:
-        print(f"  {t} {a}  x{n}")
+    # --- Duplicates: same ticker and year more than once ---
+    pairs = Counter((r["ticker"], r["fiscal_year"]) for r in rows)
+    dups = {k: n for k, n in pairs.items() if n > 1}
+    print(f"\nDUPLICATES ticker+year: {len(dups):,}")
+    for (t, y), n in list(dups.items())[:10]:
+        print(f"  {t} {y}  x{n}")
 
-    # --- Empresas de interes ---
-    objetivo = ["AAPL", "NVDA", "TSLA", "MSFT", "AMZN", "META", "FB", "INTC", "GOOGL", "GOOG", "AMD", "NFLX"]
-    por_ticker = defaultdict(list)
-    for f in filas:
-        por_ticker[f["ticker"]].append(f["fiscal_year"])
-    print("\nEMPRESAS DE INTERES")
-    for t in objetivo:
-        if t in por_ticker:
-            print(f"  {t:<8} {sorted(por_ticker[t])}")
+    # --- Companies of interest ---
+    targets = ["AAPL", "NVDA", "TSLA", "MSFT", "AMZN", "META", "FB", "INTC", "GOOGL", "GOOG", "AMD", "NFLX"]
+    by_ticker = defaultdict(list)
+    for r in rows:
+        by_ticker[r["ticker"]].append(r["fiscal_year"])
+    print("\nCOMPANIES OF INTEREST")
+    for t in targets:
+        if t in by_ticker:
+            print(f"  {t:<8} {sorted(by_ticker[t])}")
         else:
-            print(f"  {t:<8} no esta en el bucket")
+            print(f"  {t:<8} not in the bucket")
 
 
 def main():
     client = get_client()
-    print(f"Listando s3://{BUCKET}/{PREFIX} ...")
+    print(f"Listing s3://{BUCKET}/{PREFIX} ...")
     try:
-        objetos = listar_todo(client)
+        objects = list_all(client)
     except Exception as e:
-        print(f"\nERROR al listar: {type(e).__name__}: {e}")
-        print("\nRevisa que el .env tenga AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY")
+        print(f"\nERROR while listing: {type(e).__name__}: {e}")
+        print("\nCheck that .env has AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY")
         return
-    if not objetos:
-        print("No se encontro ningun objeto. Revisa el nombre del bucket y el prefijo.")
+    if not objects:
+        print("No objects found. Check the bucket name and the prefix.")
         return
 
-    filas, sueltas = parsear(objetos)
-    analizar(objetos, filas, sueltas)
-    guardar(filas, sueltas)
-    print("\nListo. Nada se descargo, solo se listo.")
+    rows, unparsed = parse(objects)
+    analyze(objects, rows, unparsed)
+    save(rows, unparsed)
+    print("\nDone. Nothing was downloaded, only listed.")
 
 
 if __name__ == "__main__":
