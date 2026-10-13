@@ -16,6 +16,8 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
+from .company_year import extract_company_year
+
 # search/ is a folder of the repo, not an installed package. In Docker it is
 # copied to /app/search (see api/Dockerfile); locally it is <repo>/search.
 SEARCH_DIR = Path(os.environ.get("SEARCH_DIR", Path(__file__).resolve().parents[2] / "search"))
@@ -75,11 +77,6 @@ def search(question: str, ticker: str, fiscal_year: int) -> list[dict]:
 def generate(question: str, hits: list[dict]) -> dict:
     """Turn the chunks into a cited answer, in Contract 4."""
     return get_generator().run(question=question, documents=hits).to_api_response()
-
-
-def extract_company_year(question: str) -> tuple[str | None, int | None]:
-    # TODO: replace with José Luis's piece (question -> ticker, fiscal_year)
-    return None, None
 
 
 def answer_question(question: str, ticker: str | None = None, fiscal_year: int | None = None) -> dict:
