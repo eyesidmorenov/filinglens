@@ -13,6 +13,7 @@ Every function that measures size takes a `count` function, so tests can use a
 simple word counter and the pipeline uses the real tokenizer.
 """
 
+import re
 from collections.abc import Callable
 
 from .layout import is_table_row, is_year_header, rows_to_markdown
@@ -30,6 +31,16 @@ MAX_LABEL_ROWS_INSIDE = 4
 
 SENTENCE_END_CHARS = (".", "!", "?", '."', ".”", ".)")
 SENTENCE_START = ('"', "“", "(", "•")
+
+# A sentence that introduces the table under it ("The following table shows net sales
+# by category...", "...were as follows:"). It is copied into the table's title, because
+# the numbers alone don't say what they measure; it also stays in the prose.
+TABLE_INTRO = re.compile(
+    r"\b(?:following|below)\b.{0,60}\btables?\b|\btables?\s+below\b|\bas\s+follows\b"
+    r"|\bfollowing\b.{0,80}\b(?:summar\w*|present\w*|shows?|sets?\s+forth|provides?)\b",
+    re.IGNORECASE,
+)
+MAX_INTRO_WORDS = 60
 
 
 def ends_sentence(word: str) -> bool:
@@ -138,6 +149,18 @@ def looks_like_table_header(line: str) -> bool:
     return text[0].isupper() or text[0] == "("
 
 
+def table_intro(items: list[tuple[int, str]]) -> str:
+    """The last sentence of the prose just above a table, when it introduces the table."""
+    words = [(p, w) for p, line in items[-6:] for w in line.replace(" | ", " ").split()]
+    sentences = split_sentences(words)
+    if not sentences:
+        return ""
+    last = sentences[-1][1]
+    if len(last.split()) > MAX_INTRO_WORDS:
+        return ""
+    return last if last.endswith(":") or TABLE_INTRO.search(last) else ""
+
+
 def merge_table_gaps(segs: list[dict]) -> list[dict]:
     """
     Join table / short labels / table on the same page into one table, so an
@@ -189,9 +212,10 @@ def segments(doc: Document) -> list[dict]:
                         header.insert(0, last["items"].pop())
                     else:
                         break
+                intro = table_intro(last["items"])
                 if not last["items"]:
                     out.pop()
-                out.append({"kind": kind, "section": section, "items": header + [(page.page, line)]})
+                out.append({"kind": kind, "section": section, "items": header + [(page.page, line)], "intro": intro})
                 continue
             out.append({"kind": kind, "section": section, "items": [(page.page, line)]})
     return merge_table_gaps(out)
@@ -206,7 +230,9 @@ def text_chunks(items: list[tuple[int, str]], count: Counter) -> list[tuple[int,
     return window_sentences(sentences, count)
 
 
-def table_chunks(items: list[tuple[int, str]], section: str, count: Counter) -> list[tuple[int, str]] | None:
+def table_chunks(
+    items: list[tuple[int, str]], section: str, count: Counter, intro: str = ""
+) -> list[tuple[int, str]] | None:
     """
     (page, markdown) pairs; long tables split by rows, repeating title and header.
     None when the rows are only headers (e.g. year rows), so the caller keeps them as text.
@@ -223,7 +249,8 @@ def table_chunks(items: list[tuple[int, str]], section: str, count: Counter) -> 
     # multi-cell lead rows are column headers ("2019 | 2018 | 2017")
     caption = " ".join(r[0] for r in lead if len(r) == 1)
     columns = [r for r in lead if len(r) > 1] or [[""] * max(len(r) for r in body)]
-    title = f"Table ({section})" + (f": {caption}" if caption else "")
+    label = " ".join(part for part in (intro, caption) if part)
+    title = f"Table ({section})" + (f": {label}" if label else "")
 
     def render(block: list[list[str]]) -> str:
         return title + "\n" + rows_to_markdown(columns + block, header_rows=len(columns))
@@ -245,7 +272,7 @@ def chunk_document(doc: Document, count: Counter = count_tokens) -> list[Chunk]:
     for seg in segments(doc):
         pieces, content_type = None, "table"
         if seg["kind"] == "table" and sum(is_table_row(cells(l)) for _, l in seg["items"]) >= 2:
-            pieces = table_chunks(seg["items"], seg["section"], count)
+            pieces = table_chunks(seg["items"], seg["section"], count, seg.get("intro", ""))
         if pieces is None:
             pieces, content_type = text_chunks(seg["items"], count), "text"
         for page, text in pieces:

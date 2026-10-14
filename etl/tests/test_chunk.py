@@ -3,6 +3,7 @@ from src.chunk import (
     looks_like_table_header,
     split_long_sentence,
     split_sentences,
+    table_intro,
     window_sentences,
 )
 from src.models import Chunk, Document, Page
@@ -115,11 +116,48 @@ def test_sections_and_content_types():
     assert "CONSOLIDATED STATEMENTS OF OPERATIONS" in table.text
 
 
-def test_table_does_not_steal_the_end_of_the_paragraph():
+def test_the_sentence_that_introduces_a_table_goes_into_its_title_and_stays_in_the_prose():
     chunks = chunk_document(make_doc(), count=words)
     table = next(c for c in chunks if c.content_type == "table")
-    assert "percentage of revenue" not in table.text
+    title = table.text.split("\n", 1)[0]
+    # A heading right above the sentence can come along ("...Supplementary Data The following...")
+    assert title.startswith("Table (Item 8): ")
+    assert "The following table shows our results as a percentage of revenue. CONSOLIDATED STATEMENTS" in title
     assert any("percentage of revenue" in c.text for c in chunks if c.content_type == "text")
+
+
+def test_table_does_not_steal_the_end_of_the_paragraph():
+    doc = make_doc()
+    doc.pages[1].text = doc.pages[1].text.replace(
+        "The following table shows our results as a percentage of revenue.", "Revenue grew in every region."
+    )
+    chunks = chunk_document(doc, count=words)
+    table = next(c for c in chunks if c.content_type == "table")
+    assert "every region" not in table.text
+    assert any("every region" in c.text for c in chunks if c.content_type == "text")
+
+
+def test_table_intro_is_the_last_sentence_only_when_it_introduces_a_table():
+    def intro(*lines: str) -> str:
+        return table_intro([(10, line) for line in lines])
+
+    assert intro("Sales grew 6%.", "Net sales by category were as follows:") == "Net sales by category were as follows:"
+    assert intro("The following table shows net sales by category for 2021, 2020 and 2019 (in millions):") != ""
+    assert intro("Segment revenue is summarized in the table below.") != ""
+    assert intro("The following summarizes our contractual obligations.") != ""
+    assert intro("Revenue grew in every region.") == ""
+    assert intro("The following table shows " + "many words " * 40 + "below.") == ""  # too long to be a title
+    assert intro() == ""
+
+
+def test_a_long_table_repeats_its_intro_in_every_piece():
+    rows = "\n".join(f"Line item {i} | {i},000 | {i},100 | {i},200" for i in range(200))
+    text = "Item 8. Financial Statements\nRevenue by segment was as follows:\n2019 | 2018 | 2017\n" + rows
+    doc = Document(**META, pages=[Page(page=40, text=text)])
+    tables = [c for c in chunk_document(doc, count=words) if c.content_type == "table"]
+    assert len(tables) > 1
+    assert all(t.text.split("\n", 1)[0].endswith("Revenue by segment was as follows:") for t in tables)
+    assert all(words(t.text) <= CHUNK_MAX_TOKENS for t in tables)
 
 
 def test_long_table_is_split_repeating_its_header():
