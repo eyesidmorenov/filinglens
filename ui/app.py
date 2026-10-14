@@ -5,6 +5,7 @@ import httpx
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
+
 def format_source(s: dict) -> str:
     section = s.get("section")
     if not section or section == "Unknown":
@@ -12,6 +13,23 @@ def format_source(s: dict) -> str:
     name = s.get("ticker") or s["company"]
     return f"- {name} {s['fiscal_year']} · {section} · p. {s['page']}"
 
+@cl.set_starters
+async def set_starters():
+    return [
+        cl.Starter(
+            label="Apple · 2019 · Risk factors",
+            message="What were Apple's main risk factors in fiscal 2019?",
+        ),
+        cl.Starter(
+            label="NVIDIA · 2020 · Business overview",
+            message="How did NVIDIA describe its main business segments in fiscal 2020?",
+        ),
+        cl.Starter(
+            label="Meta · 2021 · Business overview",
+            message="How did Meta Platforms describe its business in fiscal 2021?",
+        ),
+    ]
+    
 @cl.on_message
 async def main(message: cl.Message):
     try:
