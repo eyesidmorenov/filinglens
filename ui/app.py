@@ -5,11 +5,6 @@ import httpx
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
-WELCOME_MESSAGE = (
-    "Hi 👋 Ask me about the 10-K reports of NASDAQ companies.\n\n"
-    "Hola 👋 Pregúntame sobre los reportes 10-K de empresas del NASDAQ."
-)
-
 
 def format_source(s: dict) -> str:
     section = s.get("section")
@@ -18,12 +13,23 @@ def format_source(s: dict) -> str:
     name = s.get("ticker") or s["company"]
     return f"- {name} {s['fiscal_year']} · {section} · p. {s['page']}"
 
-
-@cl.on_chat_start
-async def start():
-    await cl.Message(content=WELCOME_MESSAGE).send()
-
-
+@cl.set_starters
+async def set_starters():
+    return [
+        cl.Starter(
+            label="Apple · 2019 · Risk factors",
+            message="What were Apple's main risk factors in fiscal 2019?",
+        ),
+        cl.Starter(
+            label="NVIDIA · 2020 · Business overview",
+            message="How did NVIDIA describe its main business segments in fiscal 2020?",
+        ),
+        cl.Starter(
+            label="Meta · 2021 · Business overview",
+            message="How did Meta Platforms describe its business in fiscal 2021?",
+        ),
+    ]
+    
 @cl.on_message
 async def main(message: cl.Message):
     try:
