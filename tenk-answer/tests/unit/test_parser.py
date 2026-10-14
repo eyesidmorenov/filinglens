@@ -88,3 +88,42 @@ def test_string_arguments_are_parsed(ctx: BuiltContext) -> None:
 def test_malformed_tool_output_raises(ctx: BuiltContext, reply: ChatMessage) -> None:
     with pytest.raises(MalformedResponseError):
         parse_reply(reply, ctx)
+
+
+# --- Inline citation markers [n] -------------------------------------------------------------------------------
+
+
+def test_markers_point_at_the_final_sources(ctx: BuiltContext) -> None:
+    sources = [{"doc_id": "D1", "excerpt": "$391,035 million"}, {"doc_id": "D2", "excerpt": "$383,285 million"}]
+    answer = "Net sales were $391,035 million in 2024 [1] and $383,285 million in 2023 [2]."
+    parsed = parse_reply(tool_reply(answer=answer, sources=sources), ctx)
+    assert parsed.answer == answer
+    assert len(parsed.sources) == 2
+
+
+def test_markers_are_renumbered_when_a_source_is_dropped(ctx: BuiltContext) -> None:
+    # The model's [1] has an unknown id, so its [2] becomes the first (and only) source
+    sources = [{"doc_id": "D9", "excerpt": "x"}, {"doc_id": "D2", "excerpt": "$383,285 million"}]
+    answer = "A claim with a bad source [1]. Net sales were $383,285 million [2]."
+    parsed = parse_reply(tool_reply(answer=answer, sources=sources), ctx)
+    assert parsed.answer == "A claim with a bad source. Net sales were $383,285 million [1]."
+
+
+def test_duplicate_sources_share_one_marker(ctx: BuiltContext) -> None:
+    src = {"doc_id": "D1", "excerpt": "$391,035 million"}
+    parsed = parse_reply(tool_reply(answer="Net sales were $391,035 million [1][2].", sources=[src, src]), ctx)
+    assert parsed.answer == "Net sales were $391,035 million [1]."
+    assert len(parsed.sources) == 1
+
+
+def test_grouped_markers_are_split(ctx: BuiltContext) -> None:
+    sources = [{"doc_id": "D1", "excerpt": "$391,035 million"}, {"doc_id": "D2", "excerpt": "$383,285 million"}]
+    parsed = parse_reply(tool_reply(answer="Both years are reported [1, 2].", sources=sources), ctx)
+    assert parsed.answer == "Both years are reported [1][2]."
+
+
+def test_brackets_that_are_not_markers_are_kept(ctx: BuiltContext) -> None:
+    src = {"doc_id": "D1", "excerpt": "$391,035 million"}
+    answer = "See the table for fiscal [2024] and note [7] [1]."
+    parsed = parse_reply(tool_reply(answer=answer, sources=[src]), ctx)
+    assert parsed.answer == answer  # [2024] and [7] are not source positions, so they stay as written

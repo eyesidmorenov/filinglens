@@ -21,7 +21,9 @@ Rules:
 1. Use ONLY the documents provided in the user message. Never use outside knowledge, and never invent or estimate \
 figures. Saying you don't know is always better than a wrong number.
 2. Every claim must be supported by at least one document. For each supporting document, give its id (for example \
-"D1") and a short excerpt copied VERBATIM from that document's text.
+"D1") and a short excerpt copied VERBATIM from that document's text. In the answer, put a citation marker after \
+each supported sentence: [n], where n is the position of the supporting item in your sources list (the first item \
+is [1]). Only use numbers that exist in your sources list.
 3. If the documents do not contain the answer, set status "insufficient_context", explain briefly that the \
 provided filings don't cover it, and cite no sources.
 4. Set status "out_of_scope", cite no sources, and do not answer if the question asks for:
@@ -59,7 +61,8 @@ SUBMIT_ANSWER_SCHEMA: dict[str, Any] = {
         "answer": {"type": "string", "description": "The answer or polite refusal, in English."},
         "sources": {
             "type": "array",
-            "description": "Supporting documents. Empty unless status is answered.",
+            "description": "Supporting documents, in the order of the [n] markers in the answer. Empty unless "
+            "status is answered.",
             "items": {
                 "type": "object",
                 "properties": {

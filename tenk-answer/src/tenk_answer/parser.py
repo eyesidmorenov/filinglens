@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -111,21 +112,53 @@ def parse_reply(reply: ChatMessage, context: BuiltContext) -> ParsedAnswer:
         return ParsedAnswer(status=status, answer=answer or default, sources=[])
 
     sources: list[Source] = []
-    seen: set[tuple[str, str]] = set()
-    for item in output.sources:
+    position: dict[tuple[str, str], int] = {}
+    # renumber[i] = final 1-based position of the model's i-th source, or None if it was dropped
+    renumber: dict[int, int | None] = {}
+    for i, item in enumerate(output.sources, start=1):
         result = by_id.get(item.doc_id.strip())
         if result is None:
             logger.warning("Dropping source with unknown doc_id %r", item.doc_id)
+            renumber[i] = None
             continue
         source = _to_source(result, item.excerpt)
         key = (source.chunk_id, source.excerpt)
-        if key not in seen:
-            seen.add(key)
+        if key not in position:
             sources.append(source)
+            position[key] = len(sources)
+        renumber[i] = position[key]
 
     if not sources or not answer:
         # No-source-no-answer: an unsupported answer may contain invented figures, so drop its text.
         logger.warning("Model answered without valid sources; downgrading to insufficient_context")
         return ParsedAnswer(status=AnswerStatus.INSUFFICIENT_CONTEXT, answer=INSUFFICIENT_CONTEXT_MESSAGE, sources=[])
 
-    return ParsedAnswer(status=status, answer=answer, sources=sources)
+    return ParsedAnswer(status=status, answer=renumber_markers(answer, renumber), sources=sources)
+
+
+# "[1]", "[2, 3]" or "[1,2]": a group of citation markers written by the model
+_MARKER = re.compile(r"\[(\d{1,2}(?:\s*,\s*\d{1,2})*)\]")
+
+
+def renumber_markers(answer: str, renumber: dict[int, int | None]) -> str:
+    """Point the model's [n] markers at the final source list.
+
+    Markers of dropped sources disappear, duplicates collapse ([1][1] -> [1]), and a bracketed number that is not
+    one of the model's sources (e.g. "[2019]") is left untouched.
+    """
+
+    removed = "\x00"  # placeholder, so only the spaces left by a removed marker are cleaned up
+
+    def replace(match: re.Match[str]) -> str:
+        numbers = [int(n) for n in match.group(1).split(",")]
+        if not all(n in renumber for n in numbers):
+            return match.group(0)
+        final = sorted({m for n in numbers if (m := renumber[n]) is not None})
+        return "".join(f"[{m}]" for m in final) or removed
+
+    text = _MARKER.sub(replace, answer)
+    # Adjacent groups can repeat a number after renumbering: "[1][1]" -> "[1]"
+    text = re.sub(r"(\[\d+\])(?:\1)+", r"\1", text)
+    # "claim [removed]." -> "claim."
+    text = re.sub(rf"[ \t]*{removed}", "", text)
+    return text.strip()
