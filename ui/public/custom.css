@@ -1,0 +1,7 @@
+/* Logo más grande en la pantalla inicial */
+img.logo,
+img[alt="logo"] {
+  height: 130px !important;
+  width: auto !important;
+  max-width: 90vw;
+}
