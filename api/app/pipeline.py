@@ -16,6 +16,8 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
+from .company_year import analyze_company_year, clarification_message, extract_company_year
+
 # search/ is a folder of the repo, not an installed package. In Docker it is
 # copied to /app/search (see api/Dockerfile); locally it is <repo>/search.
 SEARCH_DIR = Path(os.environ.get("SEARCH_DIR", Path(__file__).resolve().parents[2] / "search"))
@@ -77,23 +79,20 @@ def generate(question: str, hits: list[dict]) -> dict:
     return get_generator().run(question=question, documents=hits).to_api_response()
 
 
-def extract_company_year(question: str) -> tuple[str | None, int | None]:
-    # TODO: replace with José Luis's piece (question -> ticker, fiscal_year)
-    return None, None
-
-
 def answer_question(question: str, ticker: str | None = None, fiscal_year: int | None = None) -> dict:
+    match = analyze_company_year(question)
+
     if ticker is None or fiscal_year is None:
-        found_ticker, found_year = extract_company_year(question)
-        ticker = ticker or found_ticker
-        fiscal_year = fiscal_year or found_year
+        ticker = ticker or match.ticker
+        fiscal_year = fiscal_year or match.fiscal_year
 
     if ticker:
         ticker = ticker.strip().upper()
 
     # Outside our 25 companies or 2019-2021: don't search, say we don't know.
     if (ticker, fiscal_year) not in company_names():
-        return {"answer": MISSING_COMPANY_OR_YEAR, "sources": [], "latency_ms": 0}
+        message = clarification_message(match, ticker=ticker, fiscal_year=fiscal_year)
+        return {"answer": message or MISSING_COMPANY_OR_YEAR, "sources": [], "latency_ms": 0}
 
     hits = search(question, ticker, fiscal_year)
     return generate(question, hits)
