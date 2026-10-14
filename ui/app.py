@@ -6,12 +6,12 @@ import httpx
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 
-def format_source(s: dict) -> str:
+def source_label(i: int, s: dict) -> str:
     section = s.get("section")
     if not section or section == "Unknown":
         section = "No section"
     name = s.get("ticker") or s["company"]
-    return f"- {name} {s['fiscal_year']} · {section} · p. {s['page']}"
+    return f"{i}. {name} {s['fiscal_year']} · {section} · p. {s['page']}"
 
 @cl.set_starters
 async def set_starters():
@@ -47,12 +47,19 @@ async def main(message: cl.Message):
 
     answer = data["answer"]
     sources = data.get("sources", [])
+    elements = []
     if sources:
-        lines = [format_source(s) for s in sources]
-        answer += "\n\n**Sources:**\n" + "\n".join(lines)
-
+        labels = []
+        for i, s in enumerate(sources, start=1):
+            label = source_label(i, s)
+            labels.append(label)
+            elements.append(
+                cl.Text(name=label, content=s.get("excerpt", ""), display="side")
+            )
+        answer += "\n\n**Citations:**\n" + "\n".join(f"- {lbl}" for lbl in labels)
+        
     latency = data.get("latency_ms")
     if latency is not None:
         answer += f"\n\n_Response time: {latency} ms_"
 
-    await cl.Message(content=answer).send()
+    await cl.Message(content=answer, elements=elements).send()
