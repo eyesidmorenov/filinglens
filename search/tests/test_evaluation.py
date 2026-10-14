@@ -47,7 +47,11 @@ def test_question_set_has_exactly_75_unique_in_scope_questions():
         question.category in {"legal_proceedings", "market_risk", "controls"}
         for question in questions
     ) == 25
-    assert all(question.relevant_chunk_ids == () for question in questions)
+    # Exact labels (src/labels.py): evidence chunks from each question's own filing
+    for question in questions:
+        prefix = f"{question.ticker}_{question.fiscal_year}_10K_p"
+        assert question.relevant_chunk_ids, question.id
+        assert all(chunk_id.startswith(prefix) for chunk_id in question.relevant_chunk_ids)
 
 
 class FakeRetriever:
