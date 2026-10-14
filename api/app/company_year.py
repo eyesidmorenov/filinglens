@@ -185,8 +185,8 @@ def clarification_message(
     effective_year = int(fiscal_year) if fiscal_year is not None else match.fiscal_year
     problems: list[str] = []
 
-    if effective_ticker is None:
-        if match.company_is_ambiguous:
+    if effective_ticker is None or effective_ticker not in supported_tickers():
+        if effective_ticker is None and match.company_is_ambiguous:
             problems.append("I found more than one company; please ask about one company at a time.")
         else:
             problems.append("Please mention one of the 25 supported NASDAQ companies.")

@@ -14,6 +14,7 @@ from app.company_year import (
     extract_company_year,
     supported_tickers,
 )
+from app import pipeline
 
 
 @pytest.mark.parametrize(
@@ -129,3 +130,81 @@ def test_catalog_matches_the_agreed_scope():
 def test_non_string_question_is_rejected():
     with pytest.raises(TypeError, match="question must be a string"):
         analyze_company_year(None)  # type: ignore[arg-type]
+
+
+def test_clarification_rejects_an_explicit_unsupported_ticker():
+    match = analyze_company_year("Revenue in 2021")
+    assert clarification_message(match, ticker="TSLA", fiscal_year=2021) == (
+        "Please mention one of the 25 supported NASDAQ companies."
+    )
+
+
+@pytest.mark.parametrize(
+    ("question", "expected_message"),
+    [
+        ("What are Apple's risks?", "Please specify a fiscal year: 2019, 2020, or 2021."),
+        ("What happened in 2020?", "Please mention one of the 25 supported NASDAQ companies."),
+        (
+            "Compare Apple and NVIDIA in 2021",
+            "I found more than one company; please ask about one company at a time.",
+        ),
+        (
+            "Compare Apple's results in 2019 and 2021",
+            "I found more than one year; please ask about one fiscal year at a time.",
+        ),
+        (
+            "Apple revenue in 2022",
+            "That fiscal year is outside the supported range; please use 2019, 2020, or 2021.",
+        ),
+        ("Tesla revenue in 2021", "Please mention one of the 25 supported NASDAQ companies."),
+    ],
+)
+def test_pipeline_returns_specific_clarification_without_search(
+    question, expected_message, monkeypatch
+):
+    def unexpected_search(*args, **kwargs):
+        pytest.fail("search must not run for an incomplete, ambiguous, or unsupported question")
+
+    monkeypatch.setattr(pipeline, "search", unexpected_search)
+
+    assert pipeline.answer_question(question) == {
+        "answer": expected_message,
+        "sources": [],
+        "latency_ms": 0,
+    }
+
+
+def test_pipeline_rejects_an_explicit_unsupported_ticker_without_search(monkeypatch):
+    def unexpected_search(*args, **kwargs):
+        pytest.fail("search must not run for an unsupported explicit ticker")
+
+    monkeypatch.setattr(pipeline, "search", unexpected_search)
+
+    assert pipeline.answer_question("Revenue in 2021", ticker="TSLA", fiscal_year=2021) == {
+        "answer": "Please mention one of the 25 supported NASDAQ companies.",
+        "sources": [],
+        "latency_ms": 0,
+    }
+
+
+def test_pipeline_sends_a_valid_extracted_pair_to_search(monkeypatch):
+    captured = {}
+
+    def fake_search(question, ticker, fiscal_year):
+        captured.update(question=question, ticker=ticker, fiscal_year=fiscal_year)
+        return [{"id": "chunk-1"}]
+
+    def fake_generate(question, hits):
+        return {"answer": "ok", "sources": hits, "latency_ms": 1}
+
+    monkeypatch.setattr(pipeline, "search", fake_search)
+    monkeypatch.setattr(pipeline, "generate", fake_generate)
+
+    result = pipeline.answer_question("What were NVIDIA's risks in fiscal 2020?")
+
+    assert captured == {
+        "question": "What were NVIDIA's risks in fiscal 2020?",
+        "ticker": "NVDA",
+        "fiscal_year": 2020,
+    }
+    assert result == {"answer": "ok", "sources": [{"id": "chunk-1"}], "latency_ms": 1}
