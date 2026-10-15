@@ -18,6 +18,14 @@ answer.status              # answered | insufficient_context | out_of_scope
 answer.to_api_response()   # {"answer", "sources": [...], "latency_ms"}: exactly Contract 4
 ```
 
+To show the answer while Claude writes it, call `stream` instead of `run`. It returns the same `Answer`, and calls `on_token` with each new piece of the answer text along the way:
+
+```python
+answer = gen.stream(question, documents, on_token=lambda text: print(text, end="", flush=True))
+```
+
+The streamed text is a preview. Once `stream` returns, replace it with `answer.answer`: the [n] markers may be renumbered, and an answer without valid sources becomes "I don't know".
+
 To use it inside a pipeline, place `AnswerComponent(AnswerGenerator(...))` right after the retriever. Connect `retriever.documents` to `answer.documents`.
 
 ## Development

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import logging
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
 
 import anthropic
 from haystack import Document
-from haystack.dataclasses import ChatMessage
+from haystack.dataclasses import ChatMessage, StreamingChunk
 from haystack.utils import Secret
 
 from tenk_answer.context import TokenEstimator, build_context, estimate_tokens
@@ -22,6 +22,7 @@ from tenk_answer.prompts import (
     build_messages,
     build_prompt_builder,
 )
+from tenk_answer.streaming import AnswerTextExtractor
 from tenk_answer.types import Answer, AnswerStatus, SearchResult
 
 logger = logging.getLogger(__name__)
@@ -127,6 +128,72 @@ class AnswerGenerator:
 
         messages = build_messages(self._prompt_builder, documents=context.text, question=question.strip())
         reply = self._call_model(messages)
+        parsed = parse_reply(reply, context)
+        return Answer(
+            status=parsed.status,
+            answer=parsed.answer,
+            sources=parsed.sources,
+            latency_ms=elapsed_ms(),
+            model=str(reply.meta.get("model") or self.model),
+            usage=dict(reply.meta.get("usage") or {}),
+        )
+
+    def stream(
+        self,
+        question: str,
+        documents: Sequence[SearchResult | Document | dict[str, Any]],
+        on_token: Callable[[str], None],
+    ) -> Answer:
+        """Like `run`, but calls `on_token` with each new piece of the answer text while Claude writes it.
+
+        The streamed text is a preview: the returned `Answer` is the same one `run` would build, and it can differ
+        ([n] markers renumbered, or the whole text replaced by "I don't know" when no source is valid). Show the
+        returned `Answer` once it arrives. `on_token` runs on the thread that calls `stream`.
+        """
+        start = time.perf_counter()
+
+        def elapsed_ms() -> int:
+            return round((time.perf_counter() - start) * 1000)
+
+        if not question or not question.strip():
+            raise ValueError("question must be a non-empty string")
+        results = to_search_results(documents)
+        context = build_context(results, self.max_context_tokens, self.token_estimator)
+
+        if not context.documents:
+            return Answer(
+                status=AnswerStatus.INSUFFICIENT_CONTEXT,
+                answer=INSUFFICIENT_CONTEXT_MESSAGE,
+                sources=[],
+                latency_ms=elapsed_ms(),
+                model=self.model,
+                usage={},
+            )
+
+        messages = build_messages(self._prompt_builder, documents=context.text, question=question.strip())
+        extractor = AnswerTextExtractor()
+
+        def callback(chunk: StreamingChunk) -> None:
+            # structured output streams the JSON as text; the forced tool call streams it as tool arguments
+            pieces = [chunk.content or ""] + [call.arguments or "" for call in chunk.tool_calls or []]
+            for piece in pieces:
+                if text := extractor.feed(piece):
+                    on_token(text)
+
+        try:
+            result = self.generator.run(
+                messages=messages,
+                generation_kwargs=self._generation_kwargs(),
+                tools=None if self.structured_output else [SUBMIT_ANSWER_TOOL],
+                streaming_callback=callback,
+            )
+        except (anthropic.AnthropicError, TimeoutError) as e:
+            raise GenerationError(f"Answer generation failed: {type(e).__name__}: {e}") from e
+        replies = result.get("replies") or []
+        if not replies:
+            raise MalformedResponseError("Chat generator returned no replies")
+        reply: ChatMessage = replies[0]
+
         parsed = parse_reply(reply, context)
         return Answer(
             status=parsed.status,
