@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from haystack import component
-from haystack.dataclasses import ChatMessage, ToolCall
+from haystack.dataclasses import ChatMessage, StreamingChunk, ToolCall, ToolCallDelta
 
 
 def tool_reply(
@@ -53,3 +53,51 @@ class FakeChatGenerator:
     @property
     def user_prompt(self) -> str:
         return self.calls[-1]["messages"][-1].text or ""
+
+
+@component
+class FakeStreamingChatGenerator:
+    """Offline stand-in that streams `pieces` to the callback, then returns `reply`, like a streaming generator.
+
+    `as_tool_call=True` streams the pieces as tool-call argument deltas instead of text.
+    """
+
+    def __init__(
+        self,
+        reply: ChatMessage,
+        pieces: list[str],
+        as_tool_call: bool = False,
+        error: Exception | None = None,
+    ) -> None:
+        self.reply = reply
+        self.pieces = pieces
+        self.as_tool_call = as_tool_call
+        self.error = error
+        self.calls: list[dict[str, Any]] = []
+
+    @component.output_types(replies=list[ChatMessage])
+    def run(
+        self,
+        messages: list[ChatMessage],
+        generation_kwargs: dict[str, Any] | None = None,
+        tools: list[Any] | None = None,
+        streaming_callback: Any = None,
+    ) -> dict[str, list[ChatMessage]]:
+        self.calls.append(
+            {
+                "messages": messages,
+                "generation_kwargs": generation_kwargs,
+                "tools": tools,
+                "streaming_callback": streaming_callback,
+            }
+        )
+        for piece in self.pieces:
+            if self.as_tool_call:
+                chunk = StreamingChunk(content="", index=0, tool_calls=[ToolCallDelta(index=0, arguments=piece)])
+            else:
+                chunk = StreamingChunk(content=piece)
+            if streaming_callback is not None:
+                streaming_callback(chunk)
+        if self.error is not None:
+            raise self.error
+        return {"replies": [self.reply]}

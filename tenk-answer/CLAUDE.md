@@ -5,7 +5,7 @@ This project is a self-contained subfolder of a larger repo. Keep `pyproject.tom
 
 A small, importable Python library covering steps 4–5 of the RAG diagram. Input: a question plus already-retrieved documents. Output: a structured answer with citations. The FastAPI service will import it later.
 
-Out of scope for this repo: ETL, Elasticsearch, retrieval, FastAPI, Chainlit, streaming, chat history.
+Out of scope for this repo: ETL, Elasticsearch, retrieval, FastAPI, Chainlit, chat history. Streaming is limited to `AnswerGenerator.stream` (see Design step 7); transport (SSE, websockets) belongs to the API.
 
 ## Product rules (from the project doc)
 - Every answer cites **company, fiscal year, section, page**. An invented figure is worse than "I don't know."
@@ -81,6 +81,7 @@ gen = AnswerGenerator(
 )
 answer: Answer = gen.run(question="...", documents=[...])  # list[SearchResult] or list[Document]
 answer.to_api_response()  # -> dict matching Contract 4
+answer = gen.stream(question="...", documents=[...], on_token=print)  # same Answer, plus answer text as it streams
 ```
 - `AnswerComponent` is a Haystack `@component` with inputs `question: str` and `documents: list[Document]`, and output `answer: Answer`. It wraps `AnswerGenerator` so it can sit right after the retriever in the real pipeline.
 - Types:
@@ -116,6 +117,10 @@ answer.to_api_response()  # -> dict matching Contract 4
    - Missing or invalid tool output raises `MalformedResponseError`.
 5. **Short-circuit.** An empty document list returns `insufficient_context` without calling the API.
 6. **Errors.** Anthropic API and timeout errors are wrapped in `GenerationError`, with the original error chained. Retries use the client's `max_retries`.
+7. **Streaming.** `stream(question, documents, on_token)` is additive: `run` is untouched, and both build the same `Answer`.
+   - It passes a `streaming_callback` to the chat generator. `AnswerTextExtractor` (`streaming.py`) reads the JSON as it arrives (text deltas for `output_config`, tool-argument deltas for the forced tool call) and hands `on_token` only the decoded characters of the top-level `answer` string.
+   - The streamed text is a preview. `parse_reply` runs on the complete reply, so [n] markers can be renumbered and an answer without valid sources is replaced by the "I don't know" message. Callers must show the returned `Answer` at the end.
+   - A callback, not an iterator: Haystack calls the callback synchronously inside `run`, so the library needs no threads. The API bridges it to its transport.
 
 ## Tests
 ### Unit tests (`tests/unit/`)
@@ -161,6 +166,7 @@ src/tenk_answer/
   parser.py
   generator.py
   component.py
+  streaming.py  # AnswerTextExtractor
 tests/
   unit/
   integration/
@@ -178,4 +184,4 @@ tests/
 ## Working rules
 - Write tests alongside each module, and keep unit tests fully offline.
 - Verify the `anthropic-haystack` API against its current docs before coding. This matters most for tool-choice support, and for whether its native citations support fits better than the tool-call approach.
-- Don't add retrieval, FastAPI or streaming code.
+- Don't add retrieval, FastAPI or transport (SSE, websockets) code.
