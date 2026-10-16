@@ -4,8 +4,9 @@ question + ticker + fiscal_year
         -> search()   -> Contract 3 chunks  (José Luis's HybridRetriever)
         -> generate() -> Contract 4 answer  (Juan Carlos's AnswerGenerator)
 
-Both heavy pieces (BGE model, Claude client) are created once, on the first
-question, so the API starts fast and /health answers right away.
+Both heavy pieces (BGE model, Claude client) are created once. warm_up() loads
+them in the background when the API starts, so /health answers right away and
+the first question doesn't wait for the model.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ import os
 import queue
 import sys
 import threading
+import time
 from collections.abc import Iterator
 from functools import lru_cache
 from pathlib import Path
@@ -46,11 +48,36 @@ def company_names() -> dict[tuple[str, int], str]:
         return {(row["ticker"], int(row["fiscal_year"])): row["company_name"] for row in csv.DictReader(f)}
 
 
-@lru_cache(maxsize=1)
-def get_retriever():
-    from src.retrieval import HybridRetriever  # search/src/retrieval.py
+_retriever = None
+_retriever_lock = threading.Lock()
 
-    return HybridRetriever.from_settings()
+
+def get_retriever():
+    # A lock instead of lru_cache: warm_up() and the first question may ask for it
+    # at the same time, and the BGE model must be loaded only once.
+    global _retriever
+    with _retriever_lock:
+        if _retriever is None:
+            from src.retrieval import HybridRetriever  # search/src/retrieval.py
+
+            _retriever = HybridRetriever.from_settings()
+    return _retriever
+
+
+def warm_up() -> None:
+    """Load the BGE model and run one search before the first question (backlog #3).
+
+    Without it, the first question waited 17-39 s for the model to load.
+    """
+    log = logging.getLogger("uvicorn.error")  # so the message shows in `docker compose logs api`
+    start = time.perf_counter()
+    try:
+        get_retriever().run("warm up", "AAPL", 2019)  # loads BGE and opens the Elasticsearch connection
+        get_generator()
+    except Exception:
+        log.exception("Warm-up failed; the first question will load the model instead")
+        return
+    log.info("Warm-up done in %.1f s: the BGE model is ready", time.perf_counter() - start)
 
 
 @lru_cache(maxsize=1)
