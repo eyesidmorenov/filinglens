@@ -1,11 +1,20 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from app.pipeline import answer_question, answer_question_stream
+from app.pipeline import answer_question, answer_question_stream, warm_up
 import json
+import threading
 import time
 
-app = FastAPI(title="Financial Advisor Chatbot API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load the BGE model in the background: /health answers right away,
+    # and the first question no longer waits for the model (backlog #3).
+    threading.Thread(target=warm_up, daemon=True).start()
+    yield
+
+app = FastAPI(title="Financial Advisor Chatbot API", lifespan=lifespan)
 
 class Question(BaseModel):
     question: str
