@@ -20,7 +20,7 @@ from collections.abc import Iterator
 from functools import lru_cache
 from pathlib import Path
 
-from .company_year import analyze_company_year, clarification_message, extract_company_year
+from .company_year import analyze_company_year, clarification_message
 
 # search/ is a folder of the repo, not an installed package. In Docker it is
 # copied to /app/search (see api/Dockerfile); locally it is <repo>/search.
