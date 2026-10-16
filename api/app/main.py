@@ -1,6 +1,8 @@
 from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from app.pipeline import answer_question
+from app.pipeline import answer_question, answer_question_stream
+import json
 import time
 
 app = FastAPI(title="Financial Advisor Chatbot API")
@@ -40,3 +42,22 @@ def ask(payload: Question):
         sources=result["sources"],
         latency_ms=latency_ms,
     )
+
+@app.post("/ask/stream")
+def ask_stream(payload: Question):
+    """Same as /ask, but the answer arrives while Claude writes it: one JSON event per line.
+
+    {"type": "token", "text": "..."}                         a new piece of the answer (preview)
+    {"type": "final", "answer", "sources", "latency_ms"}     the answer to keep, same fields as /ask
+    {"type": "error", "message": "..."}                      something failed
+    """
+    def events():
+        start = time.perf_counter()
+        for event in answer_question_stream(payload.question, payload.ticker, payload.fiscal_year):
+            if event["type"] == "final":
+                # Same shape as /ask: validated sources and total latency (search + generation)
+                event["sources"] = [Source(**s).model_dump(exclude_none=True) for s in event["sources"]]
+                event["latency_ms"] = int((time.perf_counter() - start) * 1000)
+            yield json.dumps(event) + "\n"
+
+    return StreamingResponse(events(), media_type="application/x-ndjson")

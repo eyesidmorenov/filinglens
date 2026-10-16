@@ -11,8 +11,12 @@ question, so the API starts fast and /health answers right away.
 from __future__ import annotations
 
 import csv
+import logging
 import os
+import queue
 import sys
+import threading
+from collections.abc import Iterator
 from functools import lru_cache
 from pathlib import Path
 
@@ -27,6 +31,8 @@ if str(SEARCH_DIR) not in sys.path:
 # Official company name per ticker and year, taken from the 10-K covers (Lourdes).
 # The index stores "apple-inc"; citations should say "Apple Inc.".
 COMPANY_NAMES_CSV = Path(__file__).resolve().parent / "company_names_25.csv"
+
+logger = logging.getLogger(__name__)
 
 MISSING_COMPANY_OR_YEAR = (
     "I couldn't identify the company and fiscal year in your question. "
@@ -82,7 +88,10 @@ def generate(question: str, hits: list[dict]) -> dict:
     return get_generator().run(question=question, documents=hits).to_api_response()
 
 
-def answer_question(question: str, ticker: str | None = None, fiscal_year: int | None = None) -> dict:
+def resolve_company_year(
+    question: str, ticker: str | None = None, fiscal_year: int | None = None
+) -> tuple[str | None, int | None, str | None]:
+    """Find the company and year. Returns (ticker, fiscal_year, None), or (None, None, message) when we can't answer."""
     match = analyze_company_year(question)
 
     if ticker is None or fiscal_year is None:
@@ -95,7 +104,63 @@ def answer_question(question: str, ticker: str | None = None, fiscal_year: int |
     # Outside our 25 companies or 2019-2021: don't search, say we don't know.
     if (ticker, fiscal_year) not in company_names():
         message = clarification_message(match, ticker=ticker, fiscal_year=fiscal_year)
-        return {"answer": message or MISSING_COMPANY_OR_YEAR, "sources": [], "latency_ms": 0}
+        return None, None, message or MISSING_COMPANY_OR_YEAR
+
+    return ticker, fiscal_year, None
+
+
+def answer_question(question: str, ticker: str | None = None, fiscal_year: int | None = None) -> dict:
+    ticker, fiscal_year, message = resolve_company_year(question, ticker, fiscal_year)
+    if message:
+        return {"answer": message, "sources": [], "latency_ms": 0}
 
     hits = search(question, ticker, fiscal_year)
     return generate(question, hits)
+
+
+STREAM_ERROR = "Something went wrong while writing the answer. Please try again in a moment."
+_END = object()
+
+
+def answer_question_stream(
+    question: str, ticker: str | None = None, fiscal_year: int | None = None
+) -> Iterator[dict]:
+    """Like answer_question, but yields the answer while Claude writes it.
+
+    Events, in order:
+      {"type": "token", "text": "..."}   one per new piece of text (a preview)
+      {"type": "final", "answer", "sources", "latency_ms"}   the answer to keep (Contract 4)
+    or, if something fails: {"type": "error", "message": "..."}
+    """
+    try:
+        ticker, fiscal_year, message = resolve_company_year(question, ticker, fiscal_year)
+        if message:
+            yield {"type": "final", "answer": message, "sources": [], "latency_ms": 0}
+            return
+        hits = search(question, ticker, fiscal_year)
+    except Exception:
+        logger.exception("Search failed")
+        yield {"type": "error", "message": STREAM_ERROR}
+        return
+
+    # tenk-answer's stream() waits until Claude finishes and calls on_token along the way.
+    # It runs in its own thread and drops each piece in a queue, so we can send them right away.
+    events: queue.Queue = queue.Queue()
+
+    def write_answer() -> None:
+        try:
+            answer = get_generator().stream(
+                question=question,
+                documents=hits,
+                on_token=lambda text: events.put({"type": "token", "text": text}),
+            )
+            events.put({"type": "final", **answer.to_api_response()})
+        except Exception:
+            logger.exception("Answer generation failed")
+            events.put({"type": "error", "message": STREAM_ERROR})
+        finally:
+            events.put(_END)
+
+    threading.Thread(target=write_answer, daemon=True).start()
+    while (event := events.get()) is not _END:
+        yield event
