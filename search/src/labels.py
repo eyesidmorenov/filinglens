@@ -90,10 +90,6 @@ TOPICS: dict[str, str] = {
 }
 ONE_TOPIC = {"Q09", "Q27", "Q36", "Q63"}
 
-# The ETL labels Illumina 2019's financial statements as Item 7A (its body has no
-# Item 8 heading): only pages 40-41 are the real Item 7A. Remove once the ETL is fixed.
-SECTION_PAGES = {"Q40": (40, 41)}
-
 CONCLUSION = re.compile(r"(?:were|was|are|is)\s+(?:not\s+)?effective|conclu", re.IGNORECASE)
 SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
 
@@ -117,8 +113,7 @@ def relevant_chunk_ids(question: dict, chunks: list[dict]) -> list[str]:
     if category == "numeric_results":
         hits = [c for c in chunks if has_figure(c["text"], FIGURES[qid])]
     elif category in ("legal_proceedings", "market_risk"):
-        first, last = SECTION_PAGES.get(qid, (0, 10**6))
-        hits = [c for c in chunks if c["section"] in sections and first <= c["page"] <= last]
+        hits = [c for c in chunks if c["section"] in sections]
     elif category == "controls":
         hits = [c for c in chunks if c["section"] in sections and CONCLUSION.search(c["text"])]
     else:

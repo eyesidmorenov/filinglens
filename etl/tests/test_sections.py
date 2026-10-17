@@ -69,6 +69,19 @@ def test_financial_statements_after_the_signatures_go_back_to_item_8():
     assert set(labels[4]) == {"Item 8"}
 
 
+def test_financial_statements_start_item_8_in_a_10k_without_item_headings():
+    # Illumina: the body uses captions only (no "Item N"), and the statements start with their index
+    pages = [
+        ["QUANTITATIVE AND QUALITATIVE DISCLOSURE ABOUT MARKET RISK", "Interest Rate Sensitivity"],
+        ["CONSOLIDATED FINANCIAL STATEMENTS", "INDEX TO CONSOLIDATED FINANCIAL STATEMENTS | Page", "Balance Sheets | 45"],
+        ["CONSOLIDATED BALANCE SHEETS", "Total assets | 7,316"],
+    ]
+    labels = label_lines(pages)
+    assert labels[0] == ["Item 7A", "Item 7A"]
+    assert labels[1] == ["Item 7A", "Item 8", "Item 8"]
+    assert set(labels[2]) == {"Item 8"}
+
+
 def test_auditor_report_before_the_signatures_keeps_its_item():
     # Item 9A often carries the auditor's report on internal control
     pages = [

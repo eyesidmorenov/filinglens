@@ -93,7 +93,11 @@ def label_lines(pages: list[list[str]]) -> list[list[str]]:
         toc = is_toc_page(lines)
         page_labels = []
         for line in lines:
-            if (signed or current == "Item 16") and FINANCIAL_STATEMENTS_START.match(line.split(" | ")[0].strip()):
+            # The statements' own heading starts Item 8 after the signatures or Item 16 (Qualcomm),
+            # and in a 10-K without "Item N" headings, where nothing else would (Illumina)
+            if (signed or current == "Item 16" or not has_items) and FINANCIAL_STATEMENTS_START.match(
+                line.split(" | ")[0].strip()
+            ):
                 current = "Item 8"
             elif not toc:
                 if has_items:
