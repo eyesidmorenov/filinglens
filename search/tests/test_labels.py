@@ -40,13 +40,12 @@ def test_broader_questions_need_two_of_their_topics():
     assert relevant_chunk_ids(question, chunks) == ["two"]
 
 
-def test_short_sections_take_every_chunk_within_the_known_pages():
+def test_short_sections_take_every_chunk_of_the_section():
     chunks = [
-        _chunk("real_7a", "Item 7A", "Interest Rate Sensitivity", page=40),
-        _chunk("statements", "Item 7A", "CONSOLIDATED BALANCE SHEETS", page=46),
+        _chunk("market_risk", "Item 7A", "Interest Rate Sensitivity", page=40),
+        _chunk("statements", "Item 8", "CONSOLIDATED BALANCE SHEETS", page=46),
     ]
-    assert relevant_chunk_ids(_question("Q40", "market_risk", ["Item 7A"]), chunks) == ["real_7a"]
-    assert relevant_chunk_ids(_question("Q13", "market_risk", ["Item 7A"]), chunks) == ["real_7a", "statements"]
+    assert relevant_chunk_ids(_question("Q40", "market_risk", ["Item 7A"]), chunks) == ["market_risk"]
 
 
 def test_main_refuses_to_write_when_a_question_has_no_evidence(tmp_path):

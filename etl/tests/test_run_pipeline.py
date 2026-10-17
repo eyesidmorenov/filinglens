@@ -5,7 +5,14 @@ import pytest
 from src import run_pipeline
 from src.extract import OutOfScopeError
 from src.models import Document
-from src.run_pipeline import fingerprint, is_up_to_date, orphan_outputs, remove_outputs, write_atomic
+from src.run_pipeline import (
+    duplicate_pdfs,
+    fingerprint,
+    is_up_to_date,
+    orphan_outputs,
+    remove_outputs,
+    write_atomic,
+)
 
 META = dict(
     doc_id="AAPL_2019_10K", company="apple-inc", ticker="AAPL", fiscal_year=2019,
@@ -121,3 +128,12 @@ def test_a_file_that_cant_be_deleted_does_not_stop_the_run(tmp_path, no_extracti
     assert run_pipeline.main(["--data-dir", str(tmp_path), "--prune"]) == 0
     assert (tmp_path / "clean" / "_skipped.csv").exists()
     assert "could not remove MSFT_2020_10K.jsonl" in capsys.readouterr().err
+
+
+def test_the_same_pdf_under_two_years_is_a_duplicate(tmp_path):
+    # Fortinet: the bucket holds one file as both 2019 and 2020
+    a, b, c = tmp_path / "FTNT_2019.pdf", tmp_path / "FTNT_2020.pdf", tmp_path / "FTNT_2021.pdf"
+    a.write_bytes(b"same report")
+    b.write_bytes(b"same report")
+    c.write_bytes(b"another report")
+    assert duplicate_pdfs([a, b, c]) == {a: ["FTNT_2020.pdf"], b: ["FTNT_2019.pdf"]}

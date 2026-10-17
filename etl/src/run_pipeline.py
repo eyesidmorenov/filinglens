@@ -105,6 +105,23 @@ def handle_orphans(orphans: list[Path], raw: Path, prune: bool) -> None:
             print(f"  could not remove {path.name}: {e}", file=sys.stderr)
 
 
+def duplicate_pdfs(pdfs: list[Path]) -> dict[Path, list[str]]:
+    """PDFs whose bytes repeat another PDF's, with the names of the others.
+
+    The bucket can hold the same file under two years (Fortinet 2019 and 2020): indexing
+    both would answer for a year with another year's report. Which year is right can't be
+    told from the file, so every copy is skipped.
+    """
+    by_hash: dict[str, list[Path]] = {}
+    for pdf in pdfs:
+        by_hash.setdefault(hashlib.sha256(pdf.read_bytes()).hexdigest(), []).append(pdf)
+    return {
+        pdf: [other.name for other in same if other != pdf]
+        for same in by_hash.values() if len(same) > 1
+        for pdf in same
+    }
+
+
 def document_stats(doc: Document, chunks: list[Chunk]) -> dict:
     kinds = Counter(c.content_type for c in chunks)
     sections = Counter(c.section for c in chunks)
@@ -166,10 +183,18 @@ def main(argv: list[str] | None = None) -> int:
     current = fingerprint(args.scope)
     print(f"ETL fingerprint {current} (scope {args.scope}, tokenizer {TOKENIZER_MODEL})")
     stats, skipped = [], []
+    duplicates = duplicate_pdfs(pdfs)
     for pdf in pdfs:
         meta = metadata_for(pdf, inventory)
         doc_path = clean_dir / f"{meta['doc_id']}.json"
         chunk_path = chunk_dir / f"{meta['doc_id']}.jsonl"
+
+        if pdf in duplicates:
+            others = ", ".join(duplicates[pdf])
+            skipped.append({"file": pdf.name, "reason": f"duplicate file: same PDF as {others}"})
+            remove_outputs(doc_path, chunk_path)
+            print(f"  {pdf.name:<16} SKIPPED (duplicate file, same PDF as {others})")
+            continue
 
         # Save what is expensive, but only reuse outputs made by this exact code
         if not args.force and is_up_to_date(doc_path, chunk_path, current):
