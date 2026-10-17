@@ -123,6 +123,7 @@ Each chunk becomes a Haystack `Document`, the shape `tenk-answer` reads as Contr
 | `meta.section`, `meta.company`, `meta.ticker`, `meta.doc_id`, `meta.doc_type` | chunk | `keyword` (filterable) |
 | `meta.section_title` | added here from `section`: "Item 1A" → "Risk Factors" | `keyword` (filterable) |
 | `meta.chunk_type` | chunk's `content_type` (`text` or `table`) | `keyword` (filterable) |
+| `meta.company_name` | chunk: official name on that year's 10-K cover ("Apple Inc.") | `keyword` (filterable), through the mapping's rule for new text fields, so an existing index needs no `--recreate` |
 | `meta.page`, `meta.fiscal_year` | chunk | `integer` (filterable) |
 
 Filter by company and year with `ticker` and `fiscal_year`, never by company name: three different companies are called "Independent Bank".

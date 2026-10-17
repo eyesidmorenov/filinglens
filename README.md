@@ -204,6 +204,7 @@ Each piece of the system hands off to the next in a fixed shape. That is what le
   "section": "Item 7",
   "page": 42,
   "company": "apple-inc",
+  "company_name": "Apple Inc.",
   "ticker": "AAPL",
   "fiscal_year": 2019
 }

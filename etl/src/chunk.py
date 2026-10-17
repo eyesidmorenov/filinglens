@@ -290,5 +290,6 @@ def chunk_document(doc: Document, count: Counter = count_tokens) -> list[Chunk]:
                 fiscal_year=doc.fiscal_year,
                 content_type=content_type,
                 doc_type=doc.doc_type,
+                company_name=doc.company_name,
             ))
     return chunks
