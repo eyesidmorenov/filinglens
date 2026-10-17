@@ -1,8 +1,16 @@
 """Extract a supported FilingLens company and fiscal year from a question.
 
-This module is deliberately deterministic and offline. It does not call an LLM,
-Elasticsearch, the retriever, or the answer generator. The public tuple-returning
-function matches the placeholder introduced by API integration PR #15.
+This module is deterministic: it does not call an LLM, the retriever, or the
+answer generator. The companies and years it knows come from the index
+(catalog.py), read once; matching a question is then offline. The public
+tuple-returning function matches the placeholder introduced by API integration PR #15.
+
+Names a company answers to, all normalized (case, accents, punctuation):
+  - its official names on its 10-K covers ("Meta Platforms, Inc.", "Facebook, Inc.")
+    and the same names without the legal ending ("Meta Platforms", "Facebook");
+  - its S3 folder name ("meta-platforms-inc");
+  - nicknames that can't be derived from the official name, in company_aliases.csv
+    (data, not code: "Meta", "Gilead", "IDEXX").
 """
 
 from __future__ import annotations
@@ -14,39 +22,19 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-SUPPORTED_YEARS = frozenset({2019, 2020, 2021})
-COMPANY_NAMES_CSV = Path(__file__).with_name("company_names_25.csv")
+from . import catalog
 
-# User-facing names that cannot be derived reliably from the official CSV alone.
-# All aliases are normalized before matching, so accents and apostrophe styles do
-# not need separate entries.
-EXTRA_ALIASES: dict[str, tuple[str, ...]] = {
-    "AAPL": ("Apple",),
-    "ADBE": ("Adobe", "Adobe Systems"),
-    "ADSK": ("Autodesk",),
-    "AMGN": ("Amgen",),
-    "ATVI": ("Activision", "Activision Blizzard"),
-    "CMCSA": ("Comcast",),
-    "CTSH": ("Cognizant", "Cognizant Technology Solutions"),
-    "DXCM": ("DexCom",),
-    "EA": ("Electronic Arts",),
-    "EBAY": ("eBay",),
-    "FB": ("Facebook", "Facebook Inc", "Meta", "Meta Platforms"),
-    "GILD": ("Gilead", "Gilead Sciences"),
-    "IDXX": ("IDEXX", "IDEXX Laboratories"),
-    "ILMN": ("Illumina",),
-    "KLAC": ("KLA", "KLA Corporation", "KLA Tencor"),
-    "LRCX": ("Lam Research",),
-    "MAR": ("Marriott", "Marriott International"),
-    "MDLZ": ("Mondelez", "Mondelez International"),
-    "NVDA": ("NVIDIA",),
-    "ORLY": ("O'Reilly", "O’Reilly", "O Reilly", "O'Reilly Automotive"),
-    "PAYX": ("Paychex",),
-    "QCOM": ("Qualcomm",),
-    "SBUX": ("Starbucks",),
-    "TXN": ("Texas Instruments",),
-    "VRTX": ("Vertex", "Vertex Pharmaceuticals"),
-}
+NICKNAMES_CSV = Path(__file__).with_name("company_aliases.csv")
+
+# Endings dropped from an official name to get the name people use, repeatedly:
+# "United Airlines Holdings, Inc." -> "United Airlines", "Marriott International, Inc." -> "Marriott"
+LEGAL_ENDINGS = (
+    "public limited company", "incorporated", "corporation", "holdings", "international",
+    "company", "limited", "group", "corp", "inc", "ltd", "plc", "llc", "s a", "n v", "co", "lp", "sa", "nv", "ag", "se",
+)
+# Short names too common to identify a company alone: "a NASDAQ company" is not Nasdaq, Inc.
+# The full name ("Nasdaq, Inc.") and the ticker (NDAQ) still work.
+TOO_GENERIC = frozenset({"nasdaq"})
 
 # Capture any plausible four-digit year. A unique unsupported year is returned
 # unchanged; pipeline.py owns the 2019-2021 scope check and must reject it before
@@ -80,39 +68,71 @@ def _normalize_words(value: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9]+", " ", without_marks.casefold()).split())
 
 
+def short_name(normalized_name: str) -> str:
+    """Drop the legal endings and a leading "the": "the kraft heinz company" -> "kraft heinz"."""
+
+    words = normalized_name.removeprefix("the ")
+    changed = True
+    while changed:
+        changed = False
+        for ending in LEGAL_ENDINGS:
+            if words.endswith(" " + ending):
+                words = words[: -len(ending) - 1]
+                changed = True
+    return words
+
+
+def _nicknames() -> dict[str, set[str]]:
+    with NICKNAMES_CSV.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    nicknames: dict[str, set[str]] = {}
+    for row in rows:
+        nicknames.setdefault(row["ticker"].strip().upper(), set()).add(_normalize_words(row["alias"]))
+    return nicknames
+
+
 @lru_cache(maxsize=1)
 def _catalog() -> tuple[frozenset[str], dict[str, frozenset[str]]]:
-    """Read supported tickers and combine official names with explicit aliases."""
+    """Supported tickers (from the index) and the names each one answers to."""
 
-    aliases: dict[str, set[str]] = {}
-    with COMPANY_NAMES_CSV.open(encoding="utf-8", newline="") as handle:
-        rows = list(csv.DictReader(handle))
+    companies = catalog.load()
+    aliases: dict[str, set[str]] = {ticker: set() for ticker in companies.tickers}
+    for (ticker, _), official in companies.names.items():
+        full = _normalize_words(official)
+        aliases[ticker].add(full)
+        if (short := short_name(full)) and short not in TOO_GENERIC:
+            aliases[ticker].add(short)
+    for ticker, folder in companies.folders.items():
+        aliases[ticker].add(_normalize_words(folder))
 
-    required = {"ticker", "company", "company_name"}
-    if not rows or not required.issubset(rows[0]):
-        raise ValueError(f"{COMPANY_NAMES_CSV} does not have the expected columns: {sorted(required)}")
+    # Nicknames of companies that are not in the index are simply not used
+    for ticker, values in _nicknames().items():
+        if ticker in aliases:
+            aliases[ticker].update(values)
 
-    for row in rows:
-        ticker = row["ticker"].strip().upper()
-        aliases.setdefault(ticker, set())
-        for value in (row["company"].replace("-", " "), row["company_name"]):
-            normalized = _normalize_words(value)
-            if normalized:
-                aliases[ticker].add(normalized)
-
-    for ticker, values in EXTRA_ALIASES.items():
-        if ticker not in aliases:
-            raise ValueError(f"alias configured for unsupported ticker {ticker}")
-        aliases[ticker].update(_normalize_words(value) for value in values)
-
-    frozen_aliases = {ticker: frozenset(values) for ticker, values in aliases.items()}
+    frozen_aliases = {ticker: frozenset(v for v in values if v) for ticker, values in aliases.items()}
     return frozenset(aliases), frozen_aliases
 
 
 def supported_tickers() -> frozenset[str]:
-    """The 25 tickers supported by the current FilingLens dataset."""
+    """The tickers in the index."""
 
     return _catalog()[0]
+
+
+def supported_years() -> tuple[int, ...]:
+    """The fiscal years in the index, oldest first."""
+
+    return catalog.load().years
+
+
+def _years_text() -> str:
+    """2019, 2020, or 2021"""
+
+    years = [str(y) for y in supported_years()]
+    if len(years) <= 2:
+        return " or ".join(years)
+    return ", ".join(years[:-1]) + ", or " + years[-1]
 
 
 def _has_phrase(normalized_question: str, normalized_alias: str) -> bool:
@@ -189,14 +209,14 @@ def clarification_message(
         if effective_ticker is None and match.company_is_ambiguous:
             problems.append("I found more than one company; please ask about one company at a time.")
         else:
-            problems.append("Please mention one of the 25 supported NASDAQ companies.")
+            problems.append(f"Please mention one of the {len(supported_tickers())} supported NASDAQ companies.")
 
     if effective_year is None:
         if match.year_is_ambiguous:
             problems.append("I found more than one year; please ask about one fiscal year at a time.")
         else:
-            problems.append("Please specify a fiscal year: 2019, 2020, or 2021.")
-    elif effective_year not in SUPPORTED_YEARS:
-        problems.append("That fiscal year is outside the supported range; please use 2019, 2020, or 2021.")
+            problems.append(f"Please specify a fiscal year: {_years_text()}.")
+    elif effective_year not in supported_years():
+        problems.append(f"That fiscal year is outside the supported range; please use {_years_text()}.")
 
     return " ".join(problems)
