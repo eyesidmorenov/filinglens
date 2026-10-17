@@ -52,3 +52,34 @@
   new MutationObserver(addButtons).observe(document.body, { childList: true, subtree: true });
   addButtons();
 })();
+
+// The citations side panel opens only when the user clicks a citation.
+// Chainlit 2.12 also opens it by itself every time an answer with citations arrives
+// (display="side" elements), with no setting to turn that off: when the panel opens or
+// changes without a recent click, close it with its own close button.
+(function () {
+  const CLICK_WINDOW_MS = 1000;
+  let lastClick = 0;
+  let shownTitle = null;
+
+  document.addEventListener("pointerdown", () => {
+    lastClick = Date.now();
+  }, true);
+
+  function closeIfNotClicked() {
+    const title = document.getElementById("side-view-title");
+    const text = title ? title.textContent : null;
+    if (text === shownTitle) return;
+    shownTitle = text;
+    if (!title || Date.now() - lastClick < CLICK_WINDOW_MS) return;
+    const close = title.querySelector("button");
+    if (close) {
+      close.click();
+    } else {
+      // Small screens show the panel as a sheet, which closes with Escape
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    }
+  }
+
+  new MutationObserver(closeIfNotClicked).observe(document.body, { childList: true, subtree: true, characterData: true });
+})();
