@@ -42,6 +42,7 @@ class Document(BaseModel):
     # PROPOSED
     doc_type: Optional[DocType] = None
     form_10k_pages: Optional[tuple[int, int]] = None
+    company_name: Optional[str] = Field(default=None, description="Official name, from the 10-K cover")
     pages: list[Page] = Field(default_factory=list)
     # Internal to this lane (contract 1 is produced and consumed only by the ETL)
     fiscal_year_end: Optional[date] = Field(default=None, description="From the 10-K cover")
@@ -64,3 +65,4 @@ class Chunk(BaseModel):
     # PROPOSED
     content_type: ContentType = "text"
     doc_type: Optional[DocType] = None
+    company_name: Optional[str] = Field(default=None, description='Official name, e.g. "Apple Inc."')

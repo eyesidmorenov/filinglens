@@ -18,6 +18,7 @@ import pymupdf
 from .checks import MAX_UNREADABLE_SHARE, unreadable_pages, wrong_company
 from .classify import classify, fiscal_year_end
 from .clean import clean_pages
+from .company import official_name
 from .layout import page_rows
 from .models import Document, Page
 
@@ -87,12 +88,15 @@ def extract_document(pdf: Path, meta: dict, scope: str = "10k", fingerprint: str
         first, last = 1, n_pages
     selected = raw_pages[first - 1:last]
     cleaned = clean_pages(selected)
+    # The cover is the first page of the 10-K; its registrant block can run onto the next one
+    cover = "\n".join(page_texts[first - 1:first + 1])
 
     return Document(
         **meta,
         n_pages=n_pages,
         doc_type=doc_type,
         form_10k_pages=form_range,
+        company_name=official_name(cover, "\n".join(page_texts[first - 1:last]), meta["company"]),
         fiscal_year_end=fiscal_year_end(page_texts[form_range[0] - 1]) if form_range else None,
         etl_fingerprint=fingerprint,
         pages=[

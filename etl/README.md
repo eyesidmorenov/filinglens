@@ -59,13 +59,15 @@ A chunk:
   "ticker": "AAPL",
   "fiscal_year": 2019,
   "content_type": "table",
-  "doc_type": "10-K"
+  "doc_type": "10-K",
+  "company_name": "Apple Inc."
 }
 ```
 
 - `page` is the 1-based page of the PDF where the chunk starts.
 - `section` is the 10-K Item ("Item 1A", "Item 7", ...), or `"Unknown"` when it cannot be detected.
-- `content_type` and `doc_type` are **proposed** additions to the team contract. They are optional, and a consumer that doesn't know them can ignore them.
+- `company` is the S3 folder name ("apple-inc"); `company_name` is the official name on that year's 10-K cover ("Apple Inc."; "Facebook, Inc." in 2019-2020 and "Meta Platforms, Inc." in 2021). Citations and the list of companies the chatbot knows should use `company_name`.
+- `content_type`, `doc_type` and `company_name` are **proposed** additions to the team contract. They are optional, and a consumer that doesn't know them can ignore them.
 
 ## How it works
 
@@ -79,6 +81,8 @@ A chunk:
 
 - **Unreadable text**: its fonts have no character map, so the text comes out scrambled ("DVSSFOUMZ" instead of "currently" in AMD 2019). A page is unreadable when less than 20% of its words are known to the tokenizer, and the PDF is skipped when more than 20% of its 10-K pages are. A new copy of the PDF is needed.
 - **Wrong company**: the 10-K cover shows neither the ticker nor the company name of the file (`CSX_2020.pdf` holds the 10-K of CSW Industrials). Only a real SEC cover is checked: when the 10-K starts at its table of contents, there is nothing to compare.
+
+**The official name comes from the cover, not from a list.** `company.py` reads the registrant's name on each 10-K cover, so adding a company needs no hand-made table. It takes the line above "(Exact name of registrant as specified in its charter)"; on covers laid out as a table (Comcast, United Airlines, which list two registrants) or without that caption (Paychex 2019), the first line or cell shaped like a company name ("..., Inc.", "... Corporation", "... S.A."); and when the cover is an image (Activision 2020), the name in the text that matches the S3 folder. Names printed in capitals ("GILEAD SCIENCES, INC.") take the spelling the filing itself uses ("Gilead Sciences, Inc."), which keeps real capitals such as "IDEXX" or "NVIDIA". Checked on the 150 filings of the 50 companies: it matches the hand-made table of the first 25 in 72 of 75, and the other 3 are "Mondelēz", which is how Mondelez writes its own name.
 
 **Text by rows, not by lines.** `page.get_text()` puts every number of a financial statement on its own line, and `page.find_tables()` does not detect 10-K tables because they have no ruling lines. `layout.py` rebuilds each page as rows of cells from word coordinates, which keeps every figure under its year. See the spike in `spikes/table_spike.py`.
 

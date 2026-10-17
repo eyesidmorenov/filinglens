@@ -168,6 +168,13 @@ def test_long_table_is_split_repeating_its_header():
     assert all("2019 | 2018 | 2017" in t.text and words(t.text) <= CHUNK_MAX_TOKENS for t in tables)
 
 
+def test_every_chunk_carries_the_official_company_name():
+    doc = make_doc()
+    doc.company_name = "Apple Inc."
+    chunks = chunk_document(doc, count=words)
+    assert chunks and all(c.company_name == "Apple Inc." and c.company == "apple-inc" for c in chunks)
+
+
 def test_chunking_is_deterministic():
     first = [c.model_dump() for c in chunk_document(make_doc(), count=words)]
     second = [c.model_dump() for c in chunk_document(make_doc(), count=words)]
