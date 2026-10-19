@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 
@@ -57,8 +58,18 @@ async def set_starters():
     ]
 
 
+@cl.on_chat_end
+async def on_chat_end():
+    # The user closed the page or started a new chat: stop the answer in progress, so the
+    # connection to the API closes and Claude stops writing (backlog #7)
+    task = cl.user_session.get("answer_task")
+    if task and not task.done():
+        task.cancel()
+
+
 @cl.on_message
 async def main(message: cl.Message):
+    cl.user_session.set("answer_task", asyncio.current_task())
     # Shown while the API searches and Claude starts; replaced by the first words of the answer
     msg = cl.Message(content=SEARCHING)
     await msg.send()

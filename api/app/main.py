@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from app.pipeline import ANSWER_ERROR, answer_question, answer_question_stream, warm_up
@@ -61,20 +62,30 @@ def ask(payload: Question):
     )
 
 @app.post("/ask/stream")
-def ask_stream(payload: Question):
+async def ask_stream(payload: Question):
     """Same as /ask, but the answer arrives while Claude writes it: one JSON event per line.
 
     {"type": "token", "text": "..."}                         a new piece of the answer (preview)
     {"type": "final", "answer", "sources", "latency_ms"}     the answer to keep, same fields as /ask
     {"type": "error", "message": "..."}                      something failed
+
+    If the client leaves (page closed, stop pressed), Claude stops writing (backlog #7).
     """
-    def events():
+    cancelled = threading.Event()
+    stream = answer_question_stream(payload.question, payload.ticker, payload.fiscal_year, cancelled)
+
+    async def events():
         start = time.perf_counter()
-        for event in answer_question_stream(payload.question, payload.ticker, payload.fiscal_year):
-            if event["type"] == "final":
-                # Same shape as /ask: validated sources and total latency (search + generation)
-                event["sources"] = [Source(**s).model_dump(exclude_none=True) for s in event["sources"]]
-                event["latency_ms"] = int((time.perf_counter() - start) * 1000)
-            yield json.dumps(event) + "\n"
+        try:
+            # Search and Claude are slow and blocking: each next event is read in a worker thread
+            while (event := await run_in_threadpool(next, stream, None)) is not None:
+                if event["type"] == "final":
+                    # Same shape as /ask: validated sources and total latency (search + generation)
+                    event["sources"] = [Source(**s).model_dump(exclude_none=True) for s in event["sources"]]
+                    event["latency_ms"] = int((time.perf_counter() - start) * 1000)
+                yield json.dumps(event) + "\n"
+        finally:
+            # Runs when the answer ends, and also when the client disconnects mid-answer
+            cancelled.set()
 
     return StreamingResponse(events(), media_type="application/x-ndjson")
