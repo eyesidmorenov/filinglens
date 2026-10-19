@@ -1,11 +1,14 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from app.pipeline import answer_question, answer_question_stream, warm_up
+from app.pipeline import ANSWER_ERROR, answer_question, answer_question_stream, warm_up
 import json
+import logging
 import threading
 import time
+
+logger = logging.getLogger("uvicorn.error")  # shows in `docker compose logs api`
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -43,7 +46,12 @@ def health():
 @app.post("/ask", response_model=Answer, response_model_exclude_none=True)
 def ask(payload: Question):
     start = time.perf_counter()
-    result = answer_question(payload.question, payload.ticker, payload.fiscal_year)
+    try:
+        result = answer_question(payload.question, payload.ticker, payload.fiscal_year)
+    except Exception:
+        # Elasticsearch or Claude failed: a clear message instead of a bare HTTP 500 (backlog #6)
+        logger.exception("/ask failed")
+        raise HTTPException(status_code=503, detail=ANSWER_ERROR)
     # Latencia total (búsqueda + generación). Pendiente confirmar con el equipo.
     latency_ms = int((time.perf_counter() - start) * 1000)
     return Answer(

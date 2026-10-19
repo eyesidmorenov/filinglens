@@ -145,7 +145,8 @@ def answer_question(question: str, ticker: str | None = None, fiscal_year: int |
     return generate(question, hits)
 
 
-STREAM_ERROR = "Something went wrong while writing the answer. Please try again in a moment."
+# Shown to the user when search or Claude fails, in /ask and /ask/stream
+ANSWER_ERROR = "Something went wrong while writing the answer. Please try again in a moment."
 _END = object()
 
 
@@ -167,7 +168,7 @@ def answer_question_stream(
         hits = search(question, ticker, fiscal_year)
     except Exception:
         logger.exception("Search failed")
-        yield {"type": "error", "message": STREAM_ERROR}
+        yield {"type": "error", "message": ANSWER_ERROR}
         return
 
     # tenk-answer's stream() waits until Claude finishes and calls on_token along the way.
@@ -184,7 +185,7 @@ def answer_question_stream(
             events.put({"type": "final", **answer.to_api_response()})
         except Exception:
             logger.exception("Answer generation failed")
-            events.put({"type": "error", "message": STREAM_ERROR})
+            events.put({"type": "error", "message": ANSWER_ERROR})
         finally:
             events.put(_END)
 
