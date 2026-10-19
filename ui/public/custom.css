@@ -6,42 +6,10 @@ img[alt="logo"] {
   max-width: 90vw;
 }
 
-/* Header: "Clear chat" and "Ask a question" (custom.js) instead of the pencil icon */
+/* Header: "Clear chat" and "Ask a question" replace the pencil icon.
+   Their styles live in custom.js, so a cached custom.css can't break them. */
 #new-chat-button {
   display: none !important;
-}
-
-#fl-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fl-header-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 12px;
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  background: transparent;
-  color: hsl(var(--muted-foreground));
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s, color 0.15s;
-}
-
-.fl-header-button:hover {
-  background: hsl(var(--accent));
-  color: hsl(var(--foreground));
-}
-
-.fl-header-button svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
 }
 
 /* Citations side panel: an "X" to close it, on the right, instead of Chainlit's back arrow */
