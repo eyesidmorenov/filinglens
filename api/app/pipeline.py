@@ -150,8 +150,15 @@ ANSWER_ERROR = "Something went wrong while writing the answer. Please try again 
 _END = object()
 
 
+class StreamCancelled(Exception):
+    """The user left (closed the page or pressed stop): Claude must stop writing."""
+
+
 def answer_question_stream(
-    question: str, ticker: str | None = None, fiscal_year: int | None = None
+    question: str,
+    ticker: str | None = None,
+    fiscal_year: int | None = None,
+    cancelled: threading.Event | None = None,
 ) -> Iterator[dict]:
     """Like answer_question, but yields the answer while Claude writes it.
 
@@ -159,7 +166,10 @@ def answer_question_stream(
       {"type": "token", "text": "..."}   one per new piece of text (a preview)
       {"type": "final", "answer", "sources", "latency_ms"}   the answer to keep (Contract 4)
     or, if something fails: {"type": "error", "message": "..."}
+
+    Set `cancelled` to stop Claude at its next piece of text, so it stops spending tokens (backlog #7).
     """
+    cancelled = cancelled or threading.Event()
     try:
         ticker, fiscal_year, message = resolve_company_year(question, ticker, fiscal_year)
         if message:
@@ -175,14 +185,17 @@ def answer_question_stream(
     # It runs in its own thread and drops each piece in a queue, so we can send them right away.
     events: queue.Queue = queue.Queue()
 
+    def on_token(text: str) -> None:
+        if cancelled.is_set():
+            raise StreamCancelled  # stops Claude's stream: no more tokens are spent
+        events.put({"type": "token", "text": text})
+
     def write_answer() -> None:
         try:
-            answer = get_generator().stream(
-                question=question,
-                documents=hits,
-                on_token=lambda text: events.put({"type": "token", "text": text}),
-            )
+            answer = get_generator().stream(question=question, documents=hits, on_token=on_token)
             events.put({"type": "final", **answer.to_api_response()})
+        except StreamCancelled:
+            logging.getLogger("uvicorn.error").info("Streaming cancelled: the user left, Claude stopped")
         except Exception:
             logger.exception("Answer generation failed")
             events.put({"type": "error", "message": ANSWER_ERROR})
