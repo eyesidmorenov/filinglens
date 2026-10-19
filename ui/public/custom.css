@@ -43,3 +43,23 @@ img[alt="logo"] {
   height: 18px;
   flex-shrink: 0;
 }
+
+/* Citations side panel: an "X" to close it, on the right, instead of Chainlit's back arrow */
+#side-view-title {
+  justify-content: space-between;
+}
+
+#side-view-title > button {
+  order: 2;
+  margin-left: 12px;
+}
+
+#side-view-title > button svg {
+  display: none;
+}
+
+#side-view-title > button::before {
+  content: "\2715";
+  font-size: 18px;
+  line-height: 1;
+}
