@@ -139,8 +139,10 @@
     lastClick = Date.now();
   }, true);
 
-  // Keyboard users open a citation with Enter or Space
+    // Keyboard users open a citation with Enter or Space
   document.addEventListener("keydown", (event) => {
+    // Typing in the question box doesn't count, only keys pressed on the page (e.g. on a citation)
+    if (event.target.closest && event.target.closest("textarea, input")) return;
     if (event.key === "Enter" || event.key === " ") lastClick = Date.now();
   }, true);
 
