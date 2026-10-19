@@ -8,11 +8,11 @@ if str(API_DIR) not in sys.path:
     sys.path.insert(0, str(API_DIR))
 
 from app.company_year import (
-    SUPPORTED_YEARS,
     analyze_company_year,
     clarification_message,
     extract_company_year,
     supported_tickers,
+    supported_years,
 )
 from app import pipeline
 
@@ -122,8 +122,9 @@ def test_explicit_api_fields_can_complete_a_partial_question():
 
 
 def test_catalog_matches_the_agreed_scope():
+    # The fixture catalog holds the first 25 companies (tests/conftest.py)
     assert len(supported_tickers()) == 25
-    assert SUPPORTED_YEARS == {2019, 2020, 2021}
+    assert supported_years() == (2019, 2020, 2021)
     assert {"AAPL", "ADBE", "FB", "NVDA", "VRTX"} <= supported_tickers()
 
 

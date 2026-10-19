@@ -11,7 +11,6 @@ the first question doesn't wait for the model.
 
 from __future__ import annotations
 
-import csv
 import logging
 import os
 import queue
@@ -22,7 +21,8 @@ from collections.abc import Iterator
 from functools import lru_cache
 from pathlib import Path
 
-from .company_year import analyze_company_year, clarification_message, extract_company_year
+from . import catalog
+from .company_year import analyze_company_year, clarification_message
 
 # search/ is a folder of the repo, not an installed package. In Docker it is
 # copied to /app/search (see api/Dockerfile); locally it is <repo>/search.
@@ -30,22 +30,20 @@ SEARCH_DIR = Path(os.environ.get("SEARCH_DIR", Path(__file__).resolve().parents[
 if str(SEARCH_DIR) not in sys.path:
     sys.path.insert(0, str(SEARCH_DIR))
 
-# Official company name per ticker and year, taken from the 10-K covers (Lourdes).
-# The index stores "apple-inc"; citations should say "Apple Inc.".
-COMPANY_NAMES_CSV = Path(__file__).resolve().parent / "company_names_25.csv"
-
 logger = logging.getLogger(__name__)
 
 MISSING_COMPANY_OR_YEAR = (
     "I couldn't identify the company and fiscal year in your question. "
-    "Please mention one of our 25 NASDAQ companies and a year between 2019 and 2021."
+    "Please mention one of our NASDAQ companies and a fiscal year."
 )
 
 
-@lru_cache(maxsize=1)
 def company_names() -> dict[tuple[str, int], str]:
-    with COMPANY_NAMES_CSV.open(encoding="utf-8") as f:
-        return {(row["ticker"], int(row["fiscal_year"])): row["company_name"] for row in csv.DictReader(f)}
+    """Official name per ticker and year, from the 10-K covers, read from the index (catalog.py).
+
+    The chunks store the S3 folder ("apple-inc"); citations should say "Apple Inc.".
+    """
+    return catalog.load().names
 
 
 _retriever = None
@@ -72,7 +70,8 @@ def warm_up() -> None:
     log = logging.getLogger("uvicorn.error")  # so the message shows in `docker compose logs api`
     start = time.perf_counter()
     try:
-        get_retriever().run("warm up", "AAPL", 2019)  # loads BGE and opens the Elasticsearch connection
+        ticker, year = next(iter(company_names()))  # reads the catalog of companies from the index
+        get_retriever().run("warm up", ticker, year)  # loads BGE and opens the Elasticsearch connection
         get_generator()
     except Exception:
         log.exception("Warm-up failed; the first question will load the model instead")
@@ -128,7 +127,7 @@ def resolve_company_year(
     if ticker:
         ticker = ticker.strip().upper()
 
-    # Outside our 25 companies or 2019-2021: don't search, say we don't know.
+    # A company or year that is not in the index: don't search, say what is missing.
     if (ticker, fiscal_year) not in company_names():
         message = clarification_message(match, ticker=ticker, fiscal_year=fiscal_year)
         return None, None, message or MISSING_COMPANY_OR_YEAR
