@@ -87,12 +87,16 @@ A chunk:
 
 **Text by rows, not by lines.** `page.get_text()` puts every number of a financial statement on its own line, and `page.find_tables()` does not detect 10-K tables because they have no ruling lines. `layout.py` rebuilds each page as rows of cells from word coordinates, which keeps every figure under its year. See the spike in `spikes/table_spike.py`.
 
+**Two-column pages.** Some filers print the 10-K body in two columns (Nasdaq, Biogen, Xcel Energy). Read row by row, each line of the left column was followed by the line of the right column at the same height, and a heading of the right column ("ITEM 7A") landed in the middle of a line, so the section was lost. `layout.py` finds the blank strip between the columns (near the middle of the page, at least 8 points wide, crossed by at most 10% of the rows) and requires lines of prose on both sides, so a table, whose right side holds numbers, never counts. On those pages the left column is read first and then the right one; a full-width title stays in place. Of the 150 filings, only Nasdaq, Biogen and Xcel Energy (2019-2021), plus 3 pages of Tractor Supply 2019 and NetApp 2020, have such pages.
+
 **Cleaning.** Running headers and footers (repeated at the top or bottom of many pages), page numbers and whitespace (`clean.py`). A line that ends in a hyphen is joined to the next one and keeps its hyphen: in 10-Ks those are compound words ("third-party", "COVID-19", "Form 10-K"), not words split by syllable.
 
 **Sections.** Numbered headings ("Item 1A. Risk Factors") are required by SEC Rule 12b-13 (`sections.py`).
 
 - The table of contents is ignored. It is recognized because it lists many Items with their page numbers ("Item 3. | Legal Proceedings | 36"). A body page can also hold several short sections in a row (Items 1B to 4, or 10 to 14), but their headings carry no page numbers, so they count. Before this rule, those headings were dropped in 65 of the 75 filings, and Item 3 Legal Proceedings, for example, was labeled with the previous Item.
 - Sentences that merely start with a reference are not headings: "Item 7 of this Form 10-K…", "Item 1A of this report…".
+- A heading can also be the last cell of a line, where a page kept the end of a paragraph on its left ("…of common stock. | ITEM 7A — QUANTITATIVE AND QUALITATIVE DISCLOSURES"). It must read as a caption, with its long words capitalised, so "| Item 1A. Risk Factors included in this report." is not one.
+- A heading never quotes: "Item 1A. Risk Factors – “The outbreak and global spread of COVID-19…”" is a reference to a subsection (American Airlines, United, Wynn), and no longer moves the section.
 - Financial statements placed after the last Item ("Item 16. Form 10-K Summary"), before or after the signature page (Activision, eBay, IDEXX, Qualcomm, Amgen), are labeled Item 8.
 - A 10-K without "Item N" headings in its body (Illumina lists its Items only in a cross-reference index at the end) is labeled by its captions ("QUANTITATIVE AND QUALITATIVE DISCLOSURE ABOUT MARKET RISK" → Item 7A). There, the statements' own heading ("INDEX TO CONSOLIDATED FINANCIAL STATEMENTS", "REPORT OF INDEPENDENT REGISTERED PUBLIC ACCOUNTING FIRM") starts Item 8: before this rule, Illumina's financial statements showed as Item 7A (about 470 chunks over its three filings). No other filing of the 50 companies changes.
 - Filers without numbered headings get known captions mapped to Items.
@@ -108,7 +112,6 @@ A chunk:
 - **Intel 2020 and 2021**: Intel reorders its 10-K and only lists Items in a cross-reference index with printed page numbers, so their chunks have `section: "Unknown"` for now. The text is still searchable.
 - **NVIDIA** puts its financial statements in Item 15 (Part IV), as its 10-K states. Filtering financial questions by Item 8 alone would miss them.
 - **Images and charts** are not processed yet. The plan is to describe them with Claude; the API key decision is pending.
-- **Two-column layouts** in investor material may interleave columns. The default `10k` scope avoids most of them.
 
 ## Layout
 

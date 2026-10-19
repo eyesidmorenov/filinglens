@@ -81,6 +81,34 @@ def caption_item(line: str) -> str | None:
     return None
 
 
+MIN_HEADING_CELL_WORDS = 3  # "ITEM 3 — LEGAL PROCEEDINGS", not a bare "Item 8."
+MAX_HEADING_CELL_WORDS = 15
+# A heading is a caption: its long words are capitalised. A reference in a sentence is not
+# ("| Item 1A. Risk Factors included in this report.")
+MIN_LONG_WORD = 4
+QUOTE = re.compile(r'[“"]')
+
+
+def is_caption(text: str) -> bool:
+    words = [w.strip(".,;:()\"'’“”") for w in text.split()]
+    return all(w[:1].isupper() for w in words if len(w) >= MIN_LONG_WORD and w.isalpha())
+
+
+def heading_match(line: str) -> re.Match | None:
+    """An Item heading at the start of the line, or as the last cell of a line where a
+    two-column page put it after the left column's text ("...stock. | ITEM 7A — QUANTITATIVE")."""
+    cells = line.split(" | ")
+    m = ITEM_HEADING.match(line)
+    if m:
+        # A heading never quotes: 'Item 1. Business – “Employees and Labor Relations.”' is a
+        # reference to a subsection (American Airlines), not the start of Item 1
+        return None if QUOTE.search(cells[0]) else m
+    last = cells[-1].strip()
+    if len(cells) > 1 and MIN_HEADING_CELL_WORDS <= len(last.split()) <= MAX_HEADING_CELL_WORDS and is_caption(last) and not QUOTE.search(last):
+        return ITEM_HEADING.match(last)
+    return None
+
+
 def label_lines(pages: list[list[str]]) -> list[list[str]]:
     """For each page, the section of each of its lines. Same shape as `pages`."""
     has_items = any(
@@ -101,7 +129,7 @@ def label_lines(pages: list[list[str]]) -> list[list[str]]:
                 current = "Item 8"
             elif not toc:
                 if has_items:
-                    m = ITEM_HEADING.match(line)
+                    m = heading_match(line)
                     if m:
                         current = item_label(m.group(1))
                 else:

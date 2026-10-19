@@ -130,3 +130,23 @@ def test_financial_statements_after_item_16_go_back_to_item_8():
     labels = label_lines(pages)
     assert labels[0] == ["Item 15", "Item 15"]  # a line of the Item 15 list is not the statements themselves
     assert set(labels[2]) == {"Item 8"}
+
+
+def test_heading_in_the_last_cell_of_a_two_column_line_starts_its_item():
+    # Xcel Energy: the right column's heading sits after a line of the left column
+    pages = [["Item 7. Management's Discussion", "of common stock. | ITEM 7A — QUANTITATIVE AND QUALITATIVE DISCLOSURES",
+              "Interest rates."]]
+    assert label_lines(pages) == [["Item 7", "Item 7A", "Item 7A"]]
+
+
+def test_a_reference_in_the_last_cell_is_not_a_heading():
+    pages = [["Item 1. Business", "with the expertise to | Item 1A. Risk Factors included in this report.",
+              "pages | Item 8."]]
+    assert label_lines(pages) == [["Item 1", "Item 1", "Item 1"]]
+
+
+def test_a_quoted_subsection_is_a_reference_not_a_heading():
+    # American Airlines: "see Part I, Item 1A. Risk Factors – “The outbreak of COVID-19...”"
+    pages = [["Item 1. Business", "For more information, see Part I,",
+              "Item 1A. Risk Factors – “The outbreak and global spread of COVID-19”", "We fly planes."]]
+    assert label_lines(pages) == [["Item 1"] * 4]
