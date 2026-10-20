@@ -32,9 +32,15 @@ LEGAL_ENDINGS = (
     "public limited company", "incorporated", "corporation", "holdings", "international",
     "company", "limited", "group", "corp", "inc", "ltd", "plc", "llc", "s a", "n v", "co", "lp", "sa", "nv", "ag", "se",
 )
-# Short names too common to identify a company alone: "a NASDAQ company" is not Nasdaq, Inc.
-# The full name ("Nasdaq, Inc.") and the ticker (NDAQ) still work.
+# Short names that are also the name of the stock exchange: "a NASDAQ company" is not Nasdaq, Inc.,
+# but "What did Nasdaq report in 2021?" is. They count as the company unless the words around
+# them point to the exchange. The full name ("Nasdaq, Inc.") and the ticker (NDAQ) always work.
 TOO_GENERIC = frozenset({"nasdaq"})
+EXCHANGE_WORDS_AFTER = frozenset({
+    "companies", "company", "firms", "firm", "issuers", "listed", "listing", "listings", "stock", "stocks",
+    "market", "markets", "exchange", "composite", "index", "100", "global", "rules",
+})
+EXCHANGE_WORDS_BEFORE = frozenset({"a", "an", "on", "other", "traded", "listed"})
 
 # Capture any plausible four-digit year. A unique unsupported year is returned
 # unchanged; pipeline.py owns the 2019-2021 scope check and must reject it before
@@ -89,6 +95,40 @@ def _nicknames() -> dict[str, set[str]]:
     for row in rows:
         nicknames.setdefault(row["ticker"].strip().upper(), set()).add(_normalize_words(row["alias"]))
     return nicknames
+
+
+def _generic_names() -> dict[str, frozenset[str]]:
+    """Short names in TOO_GENERIC, per ticker: they need the context check in _names_the_company.
+
+    Not cached: catalog.load() already is, and this is one pass over ~150 names.
+    """
+
+    generic: dict[str, set[str]] = {}
+    for (ticker, _), official in catalog.load().names.items():
+        if (short := short_name(_normalize_words(official))) in TOO_GENERIC:
+            generic.setdefault(ticker, set()).add(short)
+    return {ticker: frozenset(names) for ticker, names in generic.items()}
+
+
+def _names_the_company(normalized_question: str, name: str) -> bool:
+    """True when some mention of `name` is the company, not the exchange.
+
+    "drove nasdaq s net revenues" -> True; "which nasdaq company", "listed on the nasdaq" -> False.
+    """
+    words = normalized_question.split()
+    size = len(name.split())
+    for i in range(len(words) - size + 1):
+        if " ".join(words[i : i + size]) != name:
+            continue
+        after = words[i + size] if i + size < len(words) else ""
+        before = words[i - 1] if i > 0 else ""
+        two_before = words[i - 2] if i > 1 else ""
+        if after in EXCHANGE_WORDS_AFTER or before in EXCHANGE_WORDS_BEFORE:
+            continue
+        if before == "the" and two_before in EXCHANGE_WORDS_BEFORE:
+            continue
+        return True
+    return False
 
 
 @lru_cache(maxsize=1)
@@ -159,6 +199,9 @@ def _company_candidates(question: str) -> tuple[str, ...]:
     normalized_question = _normalize_words(question)
     for ticker, names in aliases.items():
         if any(_has_phrase(normalized_question, name) for name in names):
+            found.add(ticker)
+    for ticker, names in _generic_names().items():
+        if any(_names_the_company(normalized_question, name) for name in names):
             found.add(ticker)
 
     return tuple(sorted(found))
