@@ -41,7 +41,10 @@ the passage that answers. `keyword_query()` removes the year ("in fiscal 2020",
 "FY2021"), the ticker (in capitals only: FAST is a company, "fast" is a word)
 and the company as the question writes it ("Apple's", "Cadence Design
 Systems'", "Kraft Heinz's"), taken from the filing's official `company_name`,
-which every candidate carries. The vector search keeps the full question. If
+which every candidate carries. The full name always counts; a shorter one
+("Cadence") only when it has a capital and is not part of another name, so
+"United States", "Western Europe" and "US dollars" keep all their words. The
+vector search keeps the full question. If
 nothing would be left, BM25 gets the full question. Known limit: a question
 that says "Facebook" about the 2021 filing, already named "Meta Platforms",
 keeps the word.
