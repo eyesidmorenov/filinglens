@@ -1,5 +1,9 @@
 // Header buttons like the prototype: "Clear chat" (trash) and "Ask a question".
 // They replace Chainlit's pencil "New chat" button, which stays hidden but does the work.
+//
+// Chainlit's element ids (#new-chat-button, #chat-input, #header) are internal and can change
+// in a new version (backlog #9). So every lookup has a fallback, the styles live here (no
+// dependency on custom.css), and if the header can't be found the buttons float top-left.
 (function () {
   const ICONS = {
     trash:
@@ -8,20 +12,65 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v6"/><path d="M9 10h6"/></svg>',
   };
 
-  function makeButton(id, label, icon, onClick) {
-    const button = document.createElement("button");
-    button.id = id;
-    button.type = "button";
-    button.className = "fl-header-button";
-    button.innerHTML = icon + "<span>" + label + "</span>";
-    button.addEventListener("click", onClick);
-    return button;
+  const STYLE = `
+    #fl-header-actions { display: flex; align-items: center; gap: 8px; }
+    #fl-header-actions.fl-floating { position: fixed; top: 12px; left: 12px; z-index: 50; }
+    .fl-header-button {
+      display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px;
+      border: 1px solid hsl(var(--border, 240 4% 30%)); border-radius: 8px; background: transparent;
+      color: hsl(var(--muted-foreground, 240 5% 65%)); font-size: 14px; font-weight: 500; cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+    }
+    .fl-header-button:hover {
+      background: hsl(var(--accent, 240 4% 20%)); color: hsl(var(--foreground, 0 0% 98%));
+    }
+    .fl-header-button svg { width: 18px; height: 18px; flex-shrink: 0; }
+  `;
+
+  // Wait this long for Chainlit's header before showing the buttons floating instead
+  const HEADER_WAIT_MS = 5000;
+  const startedAt = Date.now();
+
+  function findNewChatButton() {
+    return (
+      document.getElementById("new-chat-button") ||
+      document.querySelector('[data-testid*="new-chat"], button[aria-label*="new chat" i], button[title*="new chat" i]')
+    );
   }
 
+  function findQuestionBox() {
+    return (
+      document.getElementById("chat-input") ||
+      document.querySelector('#message-composer textarea, textarea[placeholder], textarea')
+    );
+  }
+
+  function findHeader() {
+    return document.getElementById("header") || document.querySelector("header");
+  }
+
+  function addStyle() {
+    if (document.getElementById("fl-header-style")) return;
+    const style = document.createElement("style");
+    style.id = "fl-header-style";
+    style.textContent = STYLE;
+    document.head.appendChild(style);
+  }
+
+  function clearChat() {
+    const newChat = findNewChatButton();
+    if (newChat) {
+      newChat.click(); // Chainlit asks for confirmation, then clears the conversation
+    } else if (window.confirm("Clear the conversation?")) {
+      window.location.reload(); // a fresh page is a new chat
+    }
+  }
+
+  // Takes the user to the question box: cursor inside, and the box lights up for a moment
   function askQuestion() {
-    const input = document.getElementById("chat-input");
+    const input = findQuestionBox();
     if (!input) return;
-    const box = document.getElementById("message-composer") || input;
+    const box = document.getElementById("message-composer") || input.closest("form") || input;
     box.scrollIntoView({ block: "center", behavior: "smooth" });
     input.focus();
     // Blue glow (FilingLens blue) so the user sees where to type
@@ -33,23 +82,47 @@
     }, 1500);
   }
 
+  function makeButton(id, label, icon, onClick) {
+    const button = document.createElement("button");
+    button.id = id;
+    button.type = "button";
+    button.className = "fl-header-button";
+    button.innerHTML = icon + "<span>" + label + "</span>";
+    button.addEventListener("click", onClick);
+    return button;
+  }
+
   function addButtons() {
-    const newChat = document.getElementById("new-chat-button");
-    if (!newChat || document.getElementById("fl-header-actions")) return;
+    addStyle();
+    const newChat = findNewChatButton();
+    if (newChat) newChat.style.display = "none"; // the pencil; our "Clear chat" replaces it
+
+    const existing = document.getElementById("fl-header-actions");
+    const header = findHeader();
+    // Floating because the header was missing, and now it's there: move into it
+    if (existing && existing.classList.contains("fl-floating") && (newChat || header)) existing.remove();
+    else if (existing) return;
 
     const actions = document.createElement("div");
     actions.id = "fl-header-actions";
     actions.append(
-      // Same as Chainlit's "New chat": asks for confirmation, then clears the conversation
-      makeButton("fl-clear-chat", "Clear chat", ICONS.trash, () => newChat.click()),
-      // Takes the user to the question box: cursor inside, and the box lights up for a moment
+      makeButton("fl-clear-chat", "Clear chat", ICONS.trash, clearChat),
       makeButton("fl-ask-question", "Ask a question", ICONS.ask, askQuestion)
     );
-    (newChat.parentElement || newChat).after(actions);
+
+    if (newChat) {
+      (newChat.parentElement || newChat).after(actions);
+    } else if (header) {
+      header.prepend(actions);
+    } else if (Date.now() - startedAt > HEADER_WAIT_MS && document.body) {
+      actions.classList.add("fl-floating");
+      document.body.appendChild(actions);
+    }
   }
 
-  // Chainlit redraws the header (new chat, theme change), so add the buttons again when needed
-  new MutationObserver(addButtons).observe(document.body, { childList: true, subtree: true });
+  // Chainlit redraws the page (new chat, theme change), so add the buttons again when needed
+  new MutationObserver(addButtons).observe(document.documentElement, { childList: true, subtree: true });
+  setTimeout(addButtons, HEADER_WAIT_MS + 100); // the floating fallback, if nothing else changed
   addButtons();
 })();
 
@@ -64,6 +137,13 @@
 
   document.addEventListener("pointerdown", () => {
     lastClick = Date.now();
+  }, true);
+
+    // Keyboard users open a citation with Enter or Space
+  document.addEventListener("keydown", (event) => {
+    // Typing in the question box doesn't count, only keys pressed on the page (e.g. on a citation)
+    if (event.target.closest && event.target.closest("textarea, input")) return;
+    if (event.key === "Enter" || event.key === " ") lastClick = Date.now();
   }, true);
 
   function closeIfNotClicked() {
