@@ -67,8 +67,9 @@ The JSON output contains the Contract 3 fields `chunk_id`, `text`, `score`,
 
 ## Evaluation set
 
-`evaluation/questions.json` contains 75 English questions: three for each of
-the 25 indexed companies, with 25 questions per fiscal year (2019-2021).
+The current `evaluation/questions.json` contains 75 English questions: three
+for each of the original 25 indexed companies, with 25 questions per fiscal
+year (2019-2021).
 It intentionally includes:
 
 - 25 numeric/table questions;
@@ -83,8 +84,21 @@ python -m src.evaluation
 ```
 
 The report is written to `data/evaluation/search-report.json`, which is ignored
-by Git. Section metrics are diagnostic proxies; the exact metrics count a hit
-only when a returned chunk is one of the question's `relevant_chunk_ids`.
+by Git. The evaluator accepts the number of questions present in the selected
+file, so the 150-question set for 50 companies does not require a code change:
+
+```powershell
+python -m src.evaluation `
+  --questions .\evaluation\questions-150.json `
+  --expected-count 150
+```
+
+`--expected-count` is an optional completeness guard. The report includes
+global metrics, breakdowns by company, fiscal year, category and difficulty,
+and the exact ids of questions with empty results, filter failures, section
+misses or exact-chunk misses. Section metrics are diagnostic proxies; the exact
+metrics count a hit only when a returned chunk is one of the question's
+`relevant_chunk_ids`.
 
 ### Exact labels
 
@@ -121,4 +135,5 @@ pytest -q
 
 Unit tests do not need Elasticsearch or a downloaded BGE model. They verify
 the shared constants, exact filters, index guard, Contract 3 serialization,
-RRF behavior, evaluation metrics, and the 75-question dataset.
+RRF behavior, scalable evaluation, diagnostic breakdowns, and the current
+75-question dataset.

@@ -18,6 +18,7 @@ from .retrieval import HybridRetriever
 DEFAULT_QUESTIONS = (
     Path(__file__).resolve().parents[1] / "evaluation" / "questions.json"
 )
+BREAKDOWN_FIELDS = ("category", "difficulty", "ticker", "fiscal_year")
 
 
 @dataclass(frozen=True)
@@ -32,10 +33,16 @@ class EvaluationQuestion:
     relevant_chunk_ids: tuple[str, ...]
 
 
-def load_questions(path: Path, expected_count: int = 75) -> list[EvaluationQuestion]:
+def load_questions(
+    path: Path, expected_count: int | None = None
+) -> list[EvaluationQuestion]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, list):
         raise TypeError("evaluation file must contain a JSON list")
+    if not raw:
+        raise ValueError("evaluation file must contain at least one question")
+    if expected_count is not None and expected_count < 1:
+        raise ValueError("expected_count must be positive when provided")
     questions = [
         EvaluationQuestion(
             id=item["id"],
@@ -49,7 +56,7 @@ def load_questions(path: Path, expected_count: int = 75) -> list[EvaluationQuest
         )
         for item in raw
     ]
-    if len(questions) != expected_count:
+    if expected_count is not None and len(questions) != expected_count:
         raise ValueError(f"expected {expected_count} questions, found {len(questions)}")
     ids = [question.id for question in questions]
     if len(ids) != len(set(ids)):
@@ -147,6 +154,65 @@ def summarize(records: list[dict[str, Any]], mode: str) -> dict[str, Any]:
     }
 
 
+def breakdown(records: list[dict[str, Any]], field: str) -> dict[str, Any]:
+    """Summarize every retrieval mode for each value of one question field."""
+
+    if field not in BREAKDOWN_FIELDS:
+        raise ValueError(f"unsupported breakdown field: {field}")
+
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for record in records:
+        key = str(record["question"][field])
+        groups.setdefault(key, []).append(record)
+
+    return {
+        key: {
+            "question_count": len(group),
+            "error_count": sum(record["error"] is not None for record in group),
+            "metrics": {
+                mode: summarize(group, mode)
+                for mode in ("bm25", "vector", "hybrid")
+            },
+        }
+        for key, group in sorted(groups.items())
+    }
+
+
+def diagnostics(records: list[dict[str, Any]], mode: str) -> dict[str, list[str]]:
+    """List question ids that need inspection instead of hiding them in averages."""
+
+    completed = [record for record in records if record.get("error") is None]
+    return {
+        "error_ids": [
+            record["question"]["id"]
+            for record in records
+            if record.get("error") is not None
+        ],
+        "empty_result_ids": [
+            record["question"]["id"]
+            for record in completed
+            if record["modes"][mode]["result_count"] == 0
+        ],
+        "filter_failure_ids": [
+            record["question"]["id"]
+            for record in completed
+            if record["modes"][mode]["result_count"] > 0
+            and not record["modes"][mode]["filters_match"]
+        ],
+        "section_miss_ids": [
+            record["question"]["id"]
+            for record in completed
+            if record["modes"][mode]["section_rank"] is None
+        ],
+        "exact_miss_ids": [
+            record["question"]["id"]
+            for record in completed
+            if record["has_exact_labels"]
+            and record["modes"][mode]["exact_rank"] is None
+        ],
+    }
+
+
 def evaluate(
     questions: list[EvaluationQuestion], retriever: HybridRetriever
 ) -> dict[str, Any]:
@@ -195,6 +261,13 @@ def evaluate(
         "metrics": {
             mode: summarize(records, mode) for mode in ("bm25", "vector", "hybrid")
         },
+        "breakdowns": {
+            field: breakdown(records, field) for field in BREAKDOWN_FIELDS
+        },
+        "diagnostics": {
+            mode: diagnostics(records, mode)
+            for mode in ("bm25", "vector", "hybrid")
+        },
         "results": records,
     }
 
@@ -204,7 +277,12 @@ def main(argv: list[str] | None = None) -> int:
         description="Evaluate the FilingLens retrieval question set"
     )
     parser.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS)
-    parser.add_argument("--expected-count", type=int, default=75)
+    parser.add_argument(
+        "--expected-count",
+        type=int,
+        default=None,
+        help="optional guard against an incomplete evaluation file",
+    )
     parser.add_argument(
         "--output",
         type=Path,

@@ -1,7 +1,9 @@
+import copy
 import json
 from collections import Counter
 from pathlib import Path
 
+import pytest
 from haystack import Document
 from src.evaluation import evaluate, load_questions, summarize
 from src.retrieval import RetrievalResult
@@ -30,7 +32,7 @@ def _doc(identifier, ticker, year, section):
 
 
 def test_question_set_has_exactly_75_unique_in_scope_questions():
-    questions = load_questions(QUESTIONS)
+    questions = load_questions(QUESTIONS, expected_count=75)
     assert [question.id for question in questions] == [
         f"Q{i:02d}" for i in range(1, 76)
     ]
@@ -52,6 +54,30 @@ def test_question_set_has_exactly_75_unique_in_scope_questions():
         prefix = f"{question.ticker}_{question.fiscal_year}_10K_p"
         assert question.relevant_chunk_ids, question.id
         assert all(chunk_id.startswith(prefix) for chunk_id in question.relevant_chunk_ids)
+
+
+def test_question_loader_accepts_a_150_question_set_without_code_changes(tmp_path):
+    template = json.loads(QUESTIONS.read_text(encoding="utf-8"))[0]
+    raw = []
+    for number in range(1, 151):
+        item = copy.deepcopy(template)
+        item["id"] = f"Q{number:03d}"
+        raw.append(item)
+
+    path = tmp_path / "questions-150.json"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    assert len(load_questions(path)) == 150
+    with pytest.raises(ValueError, match="expected 75 questions, found 150"):
+        load_questions(path, expected_count=75)
+
+
+def test_question_loader_rejects_an_empty_set(tmp_path):
+    path = tmp_path / "empty.json"
+    path.write_text("[]", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="at least one question"):
+        load_questions(path)
 
 
 class FakeRetriever:
@@ -76,6 +102,32 @@ def test_evaluation_compares_all_three_modes(tmp_path):
     assert report["metrics"]["vector"]["exact_mrr_at_k"] == 1.0
     assert report["metrics"]["hybrid"]["section_hit_rate_at_k"] == 1.0
     assert report["metrics"]["hybrid"]["filter_compliance_rate"] == 1.0
+    assert report["breakdowns"]["ticker"]["AAPL"]["question_count"] == 1
+    assert (
+        report["breakdowns"]["category"][raw[0]["category"]]["metrics"]["hybrid"]
+        ["exact_hit_rate_at_k"]
+        == 1.0
+    )
+    assert report["diagnostics"]["hybrid"] == {
+        "error_ids": [],
+        "empty_result_ids": [],
+        "filter_failure_ids": [],
+        "section_miss_ids": [],
+        "exact_miss_ids": [],
+    }
+
+
+def test_diagnostics_expose_exact_and_section_misses(tmp_path):
+    raw = json.loads(QUESTIONS.read_text(encoding="utf-8"))[:1]
+    raw[0]["expected_sections"] = ["Item 7A"]
+    raw[0]["relevant_chunk_ids"] = ["not-returned"]
+    path = tmp_path / "one-miss.json"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    report = evaluate(load_questions(path, expected_count=1), FakeRetriever())
+
+    assert report["diagnostics"]["hybrid"]["section_miss_ids"] == [raw[0]["id"]]
+    assert report["diagnostics"]["hybrid"]["exact_miss_ids"] == [raw[0]["id"]]
 
 
 def test_unlabeled_exact_metrics_are_not_fabricated():
