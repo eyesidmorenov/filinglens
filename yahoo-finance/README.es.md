@@ -32,7 +32,14 @@ y escribe en `data/` (nunca se sube al repositorio):
 | `data/yahoo/coverage.csv` | Una fila por empresa: estado, años fiscales encontrados, años después de 2021, cifras que faltan |
 | `data/yahoo/snapshots/<TICKER>.json` | Las cifras clave por año fiscal, con la fuente y la fecha de consulta |
 
-Los snapshots permiten hacer la demo sin llamar a Yahoo en vivo.
+Los snapshots permiten hacer la demo sin llamar a Yahoo en vivo. Cada uno guarda también la
+moneda de las cifras (`currency`, tomada del `financialCurrency` de Yahoo): los montos vienen sin
+formato, así que los ingresos de Apple `416161000000` son 416.200 millones de dólares.
+
+**Año fiscal.** El año fiscal de una cifra es el año calendario en que termina su período, la
+misma regla de los nombres de los 10-K: el año fiscal 2023 de NVIDIA termina en enero de 2023.
+Yahoo corre la fecha de cierre al fin de mes (Apple muestra 2025-09-30 por el 27 de septiembre),
+así que las fechas de `fiscal_year_end` son aproximadas; el año no.
 
 ## Cómo correrlo
 

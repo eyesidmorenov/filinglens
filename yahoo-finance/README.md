@@ -31,7 +31,14 @@ and writes, in `data/` (never committed):
 | `data/yahoo/coverage.csv` | One row per company: status, fiscal years found, years after 2021, missing figures |
 | `data/yahoo/snapshots/<TICKER>.json` | The key figures per fiscal year, with the source and the date they were fetched |
 
-The snapshots let a demo run without calling Yahoo live.
+The snapshots let a demo run without calling Yahoo live. Each one also stores the
+`currency` of the figures (taken from Yahoo's `financialCurrency`): the amounts are raw, so
+Apple's revenue `416161000000` means USD 416.2 billion.
+
+**Fiscal year.** A figure's fiscal year is the calendar year of its period end, the same rule as
+the 10-K file names: NVIDIA's fiscal 2023 ends in January 2023. Yahoo moves period ends to the
+end of the month (Apple shows 2025-09-30 for September 27), so the dates in `fiscal_year_end` are
+approximate; the year is not.
 
 ## Run it
 

@@ -45,7 +45,7 @@ def apple() -> FakeTicker:
         ),
         balance=statement({"Total Assets": [359.0, 365.0, 353.0, 353.0, NAN]}, APPLE_ENDS),
         cash=statement({"Free Cash Flow": [99.0, 109.0, 100.0, 111.0, NAN]}, APPLE_ENDS),
-        info={"longName": "Apple Inc."},
+        info={"longName": "Apple Inc.", "financialCurrency": "USD"},
     )
 
 
@@ -58,6 +58,7 @@ def test_years_skip_the_almost_empty_oldest_column():
     assert result.years["income_stmt"] == [2022, 2023, 2024, 2025]
     assert result.latest_year == 2025
     assert result.name_on_yahoo == "Apple Inc."
+    assert result.currency == "USD"
     assert result.figures["Total Revenue"]["2024"] == 391.0
     assert result.period_end["2024"] == "2024-09-30"
 
@@ -90,6 +91,7 @@ def test_a_broken_info_endpoint_keeps_the_figures():
     result = check_ticker(ROW, lambda symbol: fake)
     assert result.status == "ok"
     assert result.name_on_yahoo == ""
+    assert result.currency == ""
 
 
 def test_outputs_csv_and_snapshot(tmp_path):
@@ -106,6 +108,8 @@ def test_outputs_csv_and_snapshot(tmp_path):
     assert snap["fetched_at"] == "2026-10-12T22:00:00Z"
     assert snap["source"].startswith("Yahoo Finance")
     assert snap["figures"]["Net Income"]["2025"] == 112.0
+    assert snap["currency"] == "USD"
+    assert rows[0]["currency"] == "USD"
     assert not (tmp_path / "snapshots" / "ATVI.json").exists()
 
 
