@@ -1,22 +1,25 @@
 """
-Yahoo Finance coverage check for the 25 FilingLens companies.
+Yahoo Finance coverage check and snapshots for the companies in the index.
 
-Research spike, not part of the chatbot yet. It answers one question before the
-team decides anything: for each of our companies, which fiscal years and which
-figures does Yahoo Finance have after the 10-Ks end (2021)?
-
-For each ticker it reads the annual income statement, balance sheet and cash
-flow statement through yfinance, and writes:
+For each company of tickers.csv (the 50 in the index) it reads the annual income
+statement, balance sheet and cash flow statement through yfinance, and writes:
 
     data/yahoo/coverage.csv           one row per company: status, years, key figures found
-    data/yahoo/snapshots/<TICKER>.json  the key annual figures, with the date they were fetched
+    data/yahoo/snapshots/<TICKER>.json  the key annual figures by fiscal year, with the date they were fetched
 
-The snapshots let a demo run without calling Yahoo live. Analyst ratings and
-price targets are never read: the chatbot must not recommend investments.
+The chat never calls Yahoo live: the API reads the snapshots (they are the cache).
+Analyst ratings and price targets are never read: the chatbot must not recommend investments.
+
+Fiscal years follow the 10-K, not the calendar. Yahoo labels each column with the
+date the fiscal year ended, and companies name their years differently: NVIDIA's
+fiscal 2021 ended on 2021-01-31, but Dollar Tree's fiscal 2019 ended on 2020-02-01.
+Each company's rule is in tickers.csv (`fiscal_year_rule`), and --check-fiscal-years
+verifies it against the 10-Ks in the index (data/chunks/_stats.csv).
 
 Usage (from the repository root):
     docker compose --profile yahoo run --rm yahoo
     docker compose --profile yahoo run --rm yahoo python -m src.coverage --limit 3
+    docker compose --profile yahoo run --rm yahoo python -m src.coverage --check-fiscal-years
 """
 
 from __future__ import annotations
@@ -29,7 +32,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -44,11 +47,27 @@ KEY_ROWS = {
     "cashflow": ["Operating Cash Flow", "Free Cash Flow"],
 }
 
+# How a company names its fiscal year, from the date it ended:
+#   end_year     the calendar year of the end date (Apple: ended 2021-09-25 -> fiscal 2021;
+#                NVIDIA: ended 2021-01-31 -> fiscal 2021)
+#   most_months  the calendar year where most of the fiscal year falls (Dollar Tree: ended
+#                2020-02-01 -> fiscal 2019; Cadence: ended 2022-01-01 -> fiscal 2021)
+FISCAL_YEAR_RULES = ("end_year", "most_months")
+
 COVERAGE_COLUMNS = [
     "ticker_10k", "ticker_yahoo", "company", "status", "name_on_yahoo", "currency",
     "income_years", "balance_years", "cashflow_years", "latest_fiscal_year",
     "years_after_2021", "missing_figures", "note", "error",
 ]
+
+
+def fiscal_year(end: date, rule: str) -> int:
+    """The fiscal year a company's 10-K would give a year that ended on `end`."""
+    if rule == "end_year":
+        return end.year
+    if rule == "most_months":
+        return (end - timedelta(days=182)).year
+    raise ValueError(f"unknown fiscal_year_rule {rule!r}: use one of {FISCAL_YEAR_RULES}")
 
 
 def data_dir() -> Path:
@@ -63,6 +82,7 @@ class TickerRow:
     ticker_yahoo: str
     company: str
     note: str = ""
+    fiscal_year_rule: str = "end_year"
 
 
 @dataclass
@@ -73,8 +93,8 @@ class Coverage:
     name_on_yahoo: str = ""
     currency: str = ""  # reporting currency of the statements, e.g. "USD"
     years: dict[str, list[int]] = field(default_factory=dict)
-    figures: dict[str, dict[str, float]] = field(default_factory=dict)  # "Total Revenue" -> {"2023": ...}
-    period_end: dict[str, str] = field(default_factory=dict)  # "2023" -> "2023-09-30"
+    figures: dict[str, dict[str, float]] = field(default_factory=dict)  # "Total Revenue" -> {fiscal year: value}
+    period_end: dict[str, str] = field(default_factory=dict)  # fiscal year -> end date: "2023" -> "2023-09-30"
     error: str = ""
 
     @property
@@ -111,7 +131,10 @@ class Coverage:
 def load_tickers(path: Path = TICKERS) -> list[TickerRow]:
     with open(path, encoding="utf-8", newline="") as f:
         return [
-            TickerRow(r["ticker_10k"], r["ticker_yahoo"], r["company"], r.get("note") or "")
+            TickerRow(
+                r["ticker_10k"], r["ticker_yahoo"], r["company"], r.get("note") or "",
+                r.get("fiscal_year_rule") or "end_year",
+            )
             for r in csv.DictReader(f)
         ]
 
@@ -129,13 +152,14 @@ def read_statement(frame: Any, kind: str, result: Coverage) -> None:
     """Record which fiscal years a statement has, and the key figures for each year.
 
     yfinance returns one column per fiscal year, labelled with the period end date,
-    and one row per line item. A year counts only if at least one key figure has a value
+    and one row per line item. The column becomes the fiscal year the company's 10-K would
+    use (see fiscal_year). A year counts only if at least one key figure has a value
     (Yahoo sometimes adds an older column that is almost empty).
 
-    The fiscal year is the calendar year of the period end, the same rule as the 10-K
-    file names: NVIDIA's fiscal 2023 ends in January 2023. Yahoo moves period ends to the
-    end of the month (Apple shows 2025-09-30 for September 27), so the dates kept in
-    fiscal_year_end are approximate; the year is not.
+    Yahoo moves period ends to the end of the month (Apple shows 2025-09-30 for September 27),
+    so the dates kept in fiscal_year_end are approximate. The fiscal year is not: both rules
+    give the same year for the real date and for the end of its month (Dollar Tree's year that
+    ended 2023-01-28 shows as 2023-01-31, still fiscal 2022).
     """
     if frame is None or getattr(frame, "empty", True):
         result.years[kind] = []
@@ -143,7 +167,8 @@ def read_statement(frame: Any, kind: str, result: Coverage) -> None:
     found_years: set[int] = set()
     for column in frame.columns:
         end = column.date() if hasattr(column, "date") else column
-        year = str(end.year)
+        label = fiscal_year(end, result.row.fiscal_year_rule)
+        year = str(label)
         for name in KEY_ROWS[kind]:
             if name not in frame.index:
                 continue
@@ -152,7 +177,7 @@ def read_statement(frame: Any, kind: str, result: Coverage) -> None:
                 continue
             result.figures.setdefault(name, {})[year] = value
             result.period_end[year] = end.isoformat()
-            found_years.add(end.year)
+            found_years.add(label)
     result.years[kind] = sorted(found_years)
 
 
@@ -189,6 +214,7 @@ def snapshot(result: Coverage, fetched_at: str) -> dict[str, Any]:
         "currency": result.currency,
         "source": SOURCE,
         "fetched_at": fetched_at,
+        "fiscal_year_rule": result.row.fiscal_year_rule,
         "fiscal_year_end": dict(sorted(result.period_end.items())),
         "figures": {name: dict(sorted(values.items())) for name, values in result.figures.items()},
         "note": result.row.note,
@@ -221,13 +247,53 @@ def print_summary(results: list[Coverage]) -> None:
     print(f"\n{ok}/{len(results)} companies with data; {after} with fiscal years after 2021")
 
 
+def check_fiscal_years(rows: list[TickerRow], stats: Path) -> list[str]:
+    """Problems found comparing each company's rule with its 10-Ks in the index.
+
+    `stats` is data/chunks/_stats.csv from the ETL: one row per filing, with the fiscal year
+    the 10-K uses and the date its fiscal year ended. An empty list means every rule agrees.
+    """
+    with open(stats, encoding="utf-8", newline="") as f:
+        filings = list(csv.DictReader(f))
+    problems = []
+    for row in rows:
+        if row.fiscal_year_rule not in FISCAL_YEAR_RULES:
+            problems.append(f"{row.ticker_10k}: unknown fiscal_year_rule {row.fiscal_year_rule!r}")
+            continue
+        own = [f for f in filings if f["doc_id"].split("_")[0] == row.ticker_10k and f.get("fiscal_year_end")]
+        if not own:
+            problems.append(f"{row.ticker_10k}: no 10-K with a fiscal year end date in {stats.name}")
+        for filing in own:
+            expected = int(filing["fiscal_year"])
+            got = fiscal_year(date.fromisoformat(filing["fiscal_year_end"]), row.fiscal_year_rule)
+            if got != expected:
+                problems.append(
+                    f"{row.ticker_10k}: fiscal year ended {filing['fiscal_year_end']} is {expected} in the 10-K, "
+                    f"but rule {row.fiscal_year_rule} gives {got}"
+                )
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Check what Yahoo Finance has for the 25 FilingLens companies")
+    ap = argparse.ArgumentParser(description="Check what Yahoo Finance has for the FilingLens companies")
     ap.add_argument("--tickers", type=Path, default=TICKERS, help="CSV with ticker_10k,ticker_yahoo,company,note")
     ap.add_argument("--out", type=Path, default=None, help="output folder (default: data/yahoo)")
     ap.add_argument("--limit", type=int, default=None, help="only the first N companies, for a quick test")
     ap.add_argument("--sleep", type=float, default=1.0, help="seconds between companies, to be gentle with Yahoo")
+    ap.add_argument("--check-fiscal-years", action="store_true",
+                    help="only compare each company's fiscal_year_rule with its 10-Ks (data/chunks/_stats.csv); "
+                         "no call to Yahoo")
     args = ap.parse_args(argv)
+
+    if args.check_fiscal_years:
+        stats = data_dir() / "chunks" / "_stats.csv"
+        rows = load_tickers(args.tickers)
+        problems = check_fiscal_years(rows, stats)
+        for problem in problems:
+            print(f"  {problem}")
+        wrong = {problem.split(":")[0] for problem in problems}
+        print(f"{len(rows) - len(wrong)}/{len(rows)} companies: the rule matches every 10-K in {stats}")
+        return 1 if problems else 0
 
     import yfinance as yf  # imported here so the tests never need the network
 

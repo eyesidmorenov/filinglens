@@ -2,12 +2,13 @@
 
 import csv
 import json
+from datetime import date
 
 import pandas as pd
 import pytest
 
 from src import coverage
-from src.coverage import TickerRow, check_ticker, load_tickers, write_outputs
+from src.coverage import TickerRow, check_fiscal_years, check_ticker, fiscal_year, load_tickers, write_outputs
 
 
 def statement(rows: dict[str, list], ends: list[str]) -> pd.DataFrame:
@@ -107,6 +108,7 @@ def test_outputs_csv_and_snapshot(tmp_path):
     snap = json.loads((tmp_path / "snapshots" / "AAPL.json").read_text(encoding="utf-8"))
     assert snap["fetched_at"] == "2026-10-12T22:00:00Z"
     assert snap["source"].startswith("Yahoo Finance")
+    assert snap["fiscal_year_rule"] == "end_year"
     assert snap["figures"]["Net Income"]["2025"] == 112.0
     assert snap["currency"] == "USD"
     assert rows[0]["currency"] == "USD"
@@ -118,13 +120,54 @@ def test_snapshots_never_include_analyst_ratings():
     assert not any("recommend" in name.lower() or "target" in name.lower() for name in every_row)
 
 
-def test_ticker_list_is_the_final_25():
+def test_ticker_list_is_the_50_companies_of_the_index():
     rows = load_tickers()
-    assert len(rows) == 25
-    assert len({r.ticker_10k for r in rows}) == 25
+    assert len(rows) == 50
+    assert len({r.ticker_10k for r in rows}) == 50
     by_10k = {r.ticker_10k: r for r in rows}
     assert by_10k["FB"].ticker_yahoo == "META"
-    assert "DXCM" in by_10k and "INTC" not in by_10k and "MSFT" not in by_10k
+    assert "DXCM" in by_10k and "XEL" in by_10k and "INTC" not in by_10k and "MSFT" not in by_10k
+    assert {r.fiscal_year_rule for r in rows} <= set(coverage.FISCAL_YEAR_RULES)
+    assert {t for t, r in by_10k.items() if r.fiscal_year_rule == "most_months"} == {"CDNS", "DLTR", "ILMN"}
+
+
+@pytest.mark.parametrize("end, rule, expected", [
+    ("2021-09-25", "end_year", 2021),     # Apple
+    ("2021-01-31", "end_year", 2021),     # NVIDIA: its fiscal 2021 ended in January 2021
+    ("2020-02-01", "most_months", 2019),  # Dollar Tree: its fiscal 2019 ended in February 2020
+    ("2023-01-31", "most_months", 2022),  # Dollar Tree as Yahoo shows it (end of month): fiscal 2022, not 2023
+    ("2022-01-01", "most_months", 2021),  # Cadence, 52/53-week year
+    ("2019-12-28", "most_months", 2019),  # Cadence, the same rule in a year that ends in December
+])
+def test_fiscal_year_follows_the_10k(end, rule, expected):
+    assert fiscal_year(date.fromisoformat(end), rule) == expected
+
+
+def test_snapshot_years_are_10k_fiscal_years_not_calendar_years():
+    ends = ["2024-02-03", "2023-01-28", "2022-01-29"]
+    dollar_tree = FakeTicker(income=statement({"Total Revenue": [30.6, 28.3, 26.3]}, ends))
+    row = TickerRow("DLTR", "DLTR", "dollar-tree-inc", fiscal_year_rule="most_months")
+    result = check_ticker(row, lambda symbol: dollar_tree)
+    assert result.years["income_stmt"] == [2021, 2022, 2023]
+    assert result.figures["Total Revenue"]["2023"] == 30.6
+    assert result.period_end["2023"] == "2024-02-03"
+
+
+def test_fiscal_year_rules_are_checked_against_the_10ks(tmp_path):
+    stats = tmp_path / "_stats.csv"
+    stats.write_text(
+        "doc_id,fiscal_year,fiscal_year_end\n"
+        "DLTR_2019_10K,2019,2020-02-01\n"
+        "NVDA_2021_10K,2021,2021-01-31\n"
+        "ATVI_2020_10K,2020,\n",
+        encoding="utf-8",
+    )
+    right = [TickerRow("DLTR", "DLTR", "x", fiscal_year_rule="most_months"), TickerRow("NVDA", "NVDA", "x")]
+    assert check_fiscal_years(right, stats) == []
+    wrong = check_fiscal_years([TickerRow("DLTR", "DLTR", "x")], stats)
+    assert wrong and "gives 2020" in wrong[0]
+    missing = check_fiscal_years([TickerRow("ATVI", "ATVI", "x")], stats)
+    assert missing and "no 10-K" in missing[0]
 
 
 @pytest.mark.parametrize("value, expected", [(1.5, 1.5), ("2", 2.0), (NAN, None), (None, None), ("n/a", None)])
