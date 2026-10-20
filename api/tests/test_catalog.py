@@ -87,6 +87,22 @@ def test_a_too_generic_short_name_is_not_used_alone(monkeypatch, companies_from_
     assert extract_company_year("NDAQ revenue 2020") == ("NDAQ", 2020)
 
 
+def test_a_generic_short_name_counts_when_it_names_the_company(monkeypatch, companies_from_fixture):
+    names = {**companies_from_fixture.names, ("NDAQ", 2020): "Nasdaq, Inc."}
+    folders = {**companies_from_fixture.folders, "NDAQ": "nasdaq-omx-group-inc"}
+    monkeypatch.setattr(catalog, "load", lambda: catalog.Catalog(names=names, folders=folders))
+    company_year._catalog.cache_clear()
+
+    # Before, "Nasdaq" alone was never the company, so every question about it asked "which company?"
+    assert extract_company_year("What were Nasdaq's total revenues in fiscal 2020?") == ("NDAQ", 2020)
+    assert extract_company_year("What conclusion did Nasdaq reach about its controls in 2020?") == ("NDAQ", 2020)
+    assert extract_company_year("Nasdaq risk factors 2020") == ("NDAQ", 2020)
+    # The exchange, not the company
+    assert extract_company_year("Apple is listed on the Nasdaq. Revenue in 2020?") == ("AAPL", 2020)
+    assert extract_company_year("Apple, a Nasdaq-listed company: revenue in 2020") == ("AAPL", 2020)
+    assert extract_company_year("Revenue of Nasdaq companies in 2020") == (None, 2020)
+
+
 def test_the_years_in_the_messages_come_from_the_index(monkeypatch):
     names = {("AAPL", 2020): "Apple Inc.", ("AAPL", 2021): "Apple Inc."}
     monkeypatch.setattr(catalog, "load", lambda: catalog.Catalog(names=names, folders={"AAPL": "apple-inc"}))
