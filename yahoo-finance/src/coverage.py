@@ -45,7 +45,7 @@ KEY_ROWS = {
 }
 
 COVERAGE_COLUMNS = [
-    "ticker_10k", "ticker_yahoo", "company", "status", "name_on_yahoo",
+    "ticker_10k", "ticker_yahoo", "company", "status", "name_on_yahoo", "currency",
     "income_years", "balance_years", "cashflow_years", "latest_fiscal_year",
     "years_after_2021", "missing_figures", "note", "error",
 ]
@@ -71,6 +71,7 @@ class Coverage:
     # ok | no_data (delisted, wrong symbol, or Yahoo not reached) | error
     status: str = "ok"
     name_on_yahoo: str = ""
+    currency: str = ""  # reporting currency of the statements, e.g. "USD"
     years: dict[str, list[int]] = field(default_factory=dict)
     figures: dict[str, dict[str, float]] = field(default_factory=dict)  # "Total Revenue" -> {"2023": ...}
     period_end: dict[str, str] = field(default_factory=dict)  # "2023" -> "2023-09-30"
@@ -95,6 +96,7 @@ class Coverage:
             "company": self.row.company,
             "status": self.status,
             "name_on_yahoo": self.name_on_yahoo,
+            "currency": self.currency,
             "income_years": years("income_stmt"),
             "balance_years": years("balance_sheet"),
             "cashflow_years": years("cashflow"),
@@ -129,6 +131,11 @@ def read_statement(frame: Any, kind: str, result: Coverage) -> None:
     yfinance returns one column per fiscal year, labelled with the period end date,
     and one row per line item. A year counts only if at least one key figure has a value
     (Yahoo sometimes adds an older column that is almost empty).
+
+    The fiscal year is the calendar year of the period end, the same rule as the 10-K
+    file names: NVIDIA's fiscal 2023 ends in January 2023. Yahoo moves period ends to the
+    end of the month (Apple shows 2025-09-30 for September 27), so the dates kept in
+    fiscal_year_end are approximate; the year is not.
     """
     if frame is None or getattr(frame, "empty", True):
         result.years[kind] = []
@@ -159,8 +166,11 @@ def check_ticker(row: TickerRow, make_ticker: Callable[[str], Any]) -> Coverage:
         try:
             info = ticker.info or {}
             result.name_on_yahoo = info.get("longName") or info.get("shortName") or ""
+            # The figures are raw amounts in this currency (Apple revenue 416161000000 = USD 416.2 billion)
+            result.currency = info.get("financialCurrency") or ""
         except Exception:  # noqa: BLE001 - the name is a nice-to-have
             result.name_on_yahoo = ""
+            result.currency = ""
     except Exception as exc:  # noqa: BLE001 - one bad ticker must not stop the run
         result.status = "error"
         result.error = f"{type(exc).__name__}: {exc}"[:300]
@@ -176,6 +186,7 @@ def snapshot(result: Coverage, fetched_at: str) -> dict[str, Any]:
         "ticker_yahoo": result.row.ticker_yahoo,
         "company": result.row.company,
         "name_on_yahoo": result.name_on_yahoo,
+        "currency": result.currency,
         "source": SOURCE,
         "fetched_at": fetched_at,
         "fiscal_year_end": dict(sorted(result.period_end.items())),
