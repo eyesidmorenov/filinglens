@@ -10,7 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "anthropic>=1.9.0",
     "anthropic-haystack>=6.2.0",
-    "haystack-ai>=3.2.0",
+    "haystack-ai>=3.3.0",
     "pydantic>=2.13.5",
 ]
 

@@ -19,7 +19,7 @@ Out of scope for this repo: ETL, Elasticsearch, retrieval, FastAPI, Chainlit, ch
 
 ## Stack
 - Python 3.12 managed with `uv`, in a `src/` layout
-- `haystack-ai` (3.x, currently 3.2) and `anthropic-haystack` (>=6.2, `AnthropicChatGenerator`). anthropic-haystack 6.x requires Haystack 3.
+- `haystack-ai` (3.x, currently 3.3, aligned with the api, index and search images) and `anthropic-haystack` (>=6.2, `AnthropicChatGenerator`). anthropic-haystack 6.x requires Haystack 3.
 - `pydantic` v2 for public types
 - Dev: `pytest`, `ruff`, `mypy`
 
