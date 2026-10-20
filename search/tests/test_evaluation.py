@@ -13,6 +13,10 @@ EXPECTED_TICKERS = {
     "AAPL", "ADBE", "ADSK", "AMGN", "ATVI", "CMCSA", "CTSH", "DXCM",
     "EA", "EBAY", "FB", "GILD", "IDXX", "ILMN", "KLAC", "LRCX", "MAR",
     "MDLZ", "NVDA", "ORLY", "PAYX", "QCOM", "SBUX", "TXN", "VRTX",
+    # added on 2026-10-16
+    "AAL", "ADI", "ANSS", "BIIB", "CDNS", "CERN", "CTAS", "DDOG", "DLTR",
+    "ENPH", "FAST", "INCY", "KHC", "LOGI", "NDAQ", "NTAP", "OKTA", "SNPS",
+    "SPLK", "STX", "TSCO", "UAL", "WDC", "WYNN", "XEL",
 }
 
 
@@ -31,24 +35,24 @@ def _doc(identifier, ticker, year, section):
     )
 
 
-def test_question_set_has_exactly_75_unique_in_scope_questions():
-    questions = load_questions(QUESTIONS, expected_count=75)
+def test_question_set_has_exactly_150_unique_in_scope_questions():
+    questions = load_questions(QUESTIONS, expected_count=150)
     assert [question.id for question in questions] == [
-        f"Q{i:02d}" for i in range(1, 76)
+        f"Q{i:02d}" for i in range(1, 151)
     ]
     assert {question.ticker for question in questions} == EXPECTED_TICKERS
     assert {question.fiscal_year for question in questions} == {2019, 2020, 2021}
     assert set(Counter(question.ticker for question in questions).values()) == {3}
     assert Counter(question.fiscal_year for question in questions) == {
-        2019: 25,
-        2020: 25,
-        2021: 25,
+        2019: 50,
+        2020: 50,
+        2021: 50,
     }
-    assert Counter(question.category for question in questions)["numeric_results"] == 25
+    assert Counter(question.category for question in questions)["numeric_results"] == 50
     assert sum(
         question.category in {"legal_proceedings", "market_risk", "controls"}
         for question in questions
-    ) == 25
+    ) == 50
     # Exact labels (src/labels.py): evidence chunks from each question's own filing
     for question in questions:
         prefix = f"{question.ticker}_{question.fiscal_year}_10K_p"

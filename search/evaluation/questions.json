@@ -1724,5 +1724,1751 @@
     "relevant_chunk_ids": [
       "VRTX_2021_10K_p60_c3"
     ]
+  },
+  {
+    "id": "Q76",
+    "question": "How did American Airlines describe its network, hubs, regional carriers, and AAdvantage loyalty program in fiscal 2019?",
+    "ticker": "AAL",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": [
+      "AAL_2019_10K_p6_c1",
+      "AAL_2019_10K_p6_c2",
+      "AAL_2019_10K_p6_c3",
+      "AAL_2019_10K_p7_c1",
+      "AAL_2019_10K_p7_c2",
+      "AAL_2019_10K_p8_c3",
+      "AAL_2019_10K_p9_c1",
+      "AAL_2019_10K_p9_c2",
+      "AAL_2019_10K_p10_c1",
+      "AAL_2019_10K_p10_c2",
+      "AAL_2019_10K_p16_c2"
+    ]
+  },
+  {
+    "id": "Q77",
+    "question": "What were American Airlines' total operating revenues and net loss in fiscal 2020?",
+    "ticker": "AAL",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8A",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "AAL_2020_10K_p75_c2",
+      "AAL_2020_10K_p76_c8",
+      "AAL_2020_10K_p83_c1",
+      "AAL_2020_10K_p83_c2",
+      "AAL_2020_10K_p86_c1",
+      "AAL_2020_10K_p110_c1",
+      "AAL_2020_10K_p110_c4",
+      "AAL_2020_10K_p111_c1",
+      "AAL_2020_10K_p113_c1",
+      "AAL_2020_10K_p114_c4",
+      "AAL_2020_10K_p125_c4",
+      "AAL_2020_10K_p132_c2"
+    ]
+  },
+  {
+    "id": "Q78",
+    "question": "What did American Airlines report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "AAL",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": [
+      "AAL_2021_10K_p75_c1"
+    ]
+  },
+  {
+    "id": "Q79",
+    "question": "What quantitative and qualitative market risks did Analog Devices disclose in fiscal 2019?",
+    "ticker": "ADI",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": [
+      "ADI_2019_10K_p49_c1",
+      "ADI_2019_10K_p49_c2",
+      "ADI_2019_10K_p49_c3",
+      "ADI_2019_10K_p49_c4",
+      "ADI_2019_10K_p50_c1",
+      "ADI_2019_10K_p50_c2",
+      "ADI_2019_10K_p50_c3",
+      "ADI_2019_10K_p50_c4",
+      "ADI_2019_10K_p50_c5",
+      "ADI_2019_10K_p50_c6",
+      "ADI_2019_10K_p50_c7",
+      "ADI_2019_10K_p50_c8",
+      "ADI_2019_10K_p51_c1",
+      "ADI_2019_10K_p51_c2",
+      "ADI_2019_10K_p52_c1",
+      "ADI_2019_10K_p52_c2"
+    ]
+  },
+  {
+    "id": "Q80",
+    "question": "What risks did Analog Devices identify regarding customer demand, manufacturing, and competition in fiscal 2020?",
+    "ticker": "ADI",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": [
+      "ADI_2020_10K_p14_c1",
+      "ADI_2020_10K_p16_c3",
+      "ADI_2020_10K_p17_c1",
+      "ADI_2020_10K_p17_c2",
+      "ADI_2020_10K_p17_c4",
+      "ADI_2020_10K_p18_c2",
+      "ADI_2020_10K_p18_c3",
+      "ADI_2020_10K_p20_c1",
+      "ADI_2020_10K_p20_c3",
+      "ADI_2020_10K_p21_c1",
+      "ADI_2020_10K_p21_c2",
+      "ADI_2020_10K_p21_c3",
+      "ADI_2020_10K_p21_c4",
+      "ADI_2020_10K_p22_c3",
+      "ADI_2020_10K_p24_c1",
+      "ADI_2020_10K_p25_c2",
+      "ADI_2020_10K_p25_c3"
+    ]
+  },
+  {
+    "id": "Q81",
+    "question": "What were Analog Devices' revenue and net income in fiscal 2021?",
+    "ticker": "ADI",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "ADI_2021_10K_p33_c1",
+      "ADI_2021_10K_p33_c3",
+      "ADI_2021_10K_p34_c1",
+      "ADI_2021_10K_p34_c3",
+      "ADI_2021_10K_p37_c1",
+      "ADI_2021_10K_p49_c1",
+      "ADI_2021_10K_p49_c2",
+      "ADI_2021_10K_p50_c1",
+      "ADI_2021_10K_p52_c2",
+      "ADI_2021_10K_p53_c1",
+      "ADI_2021_10K_p66_c2",
+      "ADI_2021_10K_p72_c1",
+      "ADI_2021_10K_p72_c3",
+      "ADI_2021_10K_p73_c1"
+    ]
+  },
+  {
+    "id": "Q82",
+    "question": "What were Ansys' total revenue and net income in fiscal 2019?",
+    "ticker": "ANSS",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 15",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "ANSS_2019_10K_p32_c2",
+      "ANSS_2019_10K_p36_c1",
+      "ANSS_2019_10K_p36_c2",
+      "ANSS_2019_10K_p37_c1",
+      "ANSS_2019_10K_p40_c4",
+      "ANSS_2019_10K_p47_c2",
+      "ANSS_2019_10K_p71_c1",
+      "ANSS_2019_10K_p71_c2",
+      "ANSS_2019_10K_p72_c1",
+      "ANSS_2019_10K_p73_c1",
+      "ANSS_2019_10K_p74_c2",
+      "ANSS_2019_10K_p81_c2",
+      "ANSS_2019_10K_p82_c2",
+      "ANSS_2019_10K_p82_c4",
+      "ANSS_2019_10K_p100_c1"
+    ]
+  },
+  {
+    "id": "Q83",
+    "question": "What conclusion did Ansys reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "ANSS",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": [
+      "ANSS_2020_10K_p65_c2",
+      "ANSS_2020_10K_p65_c4"
+    ]
+  },
+  {
+    "id": "Q84",
+    "question": "What factors drove Ansys' revenue and operating results in fiscal 2021?",
+    "ticker": "ANSS",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "ANSS_2021_10K_p34_c2",
+      "ANSS_2021_10K_p35_c2",
+      "ANSS_2021_10K_p35_c3",
+      "ANSS_2021_10K_p35_c4",
+      "ANSS_2021_10K_p35_c5",
+      "ANSS_2021_10K_p36_c1",
+      "ANSS_2021_10K_p36_c2",
+      "ANSS_2021_10K_p36_c3",
+      "ANSS_2021_10K_p36_c4",
+      "ANSS_2021_10K_p36_c6",
+      "ANSS_2021_10K_p37_c1"
+    ]
+  },
+  {
+    "id": "Q85",
+    "question": "What marketed products and pipeline programs did Biogen describe in fiscal 2019?",
+    "ticker": "BIIB",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": [
+      "BIIB_2019_10K_p23_c1",
+      "BIIB_2019_10K_p24_c3",
+      "BIIB_2019_10K_p25_c1",
+      "BIIB_2019_10K_p26_c1",
+      "BIIB_2019_10K_p26_c2",
+      "BIIB_2019_10K_p26_c3",
+      "BIIB_2019_10K_p30_c1",
+      "BIIB_2019_10K_p36_c4",
+      "BIIB_2019_10K_p38_c2",
+      "BIIB_2019_10K_p39_c1",
+      "BIIB_2019_10K_p40_c1",
+      "BIIB_2019_10K_p40_c2",
+      "BIIB_2019_10K_p41_c2",
+      "BIIB_2019_10K_p41_c3",
+      "BIIB_2019_10K_p49_c2"
+    ]
+  },
+  {
+    "id": "Q86",
+    "question": "What were Biogen's total revenues and net income in fiscal 2020?",
+    "ticker": "BIIB",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "BIIB_2020_10K_p73_c2",
+      "BIIB_2020_10K_p73_c3",
+      "BIIB_2020_10K_p75_c4",
+      "BIIB_2020_10K_p78_c1",
+      "BIIB_2020_10K_p114_c1",
+      "BIIB_2020_10K_p114_c2",
+      "BIIB_2020_10K_p115_c1",
+      "BIIB_2020_10K_p159_c2",
+      "BIIB_2020_10K_p190_c1"
+    ]
+  },
+  {
+    "id": "Q87",
+    "question": "What did Biogen report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "BIIB",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": [
+      "BIIB_2021_10K_p69_c3"
+    ]
+  },
+  {
+    "id": "Q88",
+    "question": "What quantitative and qualitative market risks did Cadence Design Systems disclose in fiscal 2019?",
+    "ticker": "CDNS",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": [
+      "CDNS_2019_10K_p40_c1",
+      "CDNS_2019_10K_p40_c2",
+      "CDNS_2019_10K_p40_c3",
+      "CDNS_2019_10K_p40_c4",
+      "CDNS_2019_10K_p41_c1"
+    ]
+  },
+  {
+    "id": "Q89",
+    "question": "What risks did Cadence Design Systems identify regarding the semiconductor industry, competition, and international operations in fiscal 2020?",
+    "ticker": "CDNS",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": [
+      "CDNS_2020_10K_p13_c2",
+      "CDNS_2020_10K_p13_c4",
+      "CDNS_2020_10K_p14_c1",
+      "CDNS_2020_10K_p14_c2",
+      "CDNS_2020_10K_p14_c3",
+      "CDNS_2020_10K_p14_c4",
+      "CDNS_2020_10K_p15_c3",
+      "CDNS_2020_10K_p16_c1",
+      "CDNS_2020_10K_p16_c2",
+      "CDNS_2020_10K_p17_c2",
+      "CDNS_2020_10K_p17_c3",
+      "CDNS_2020_10K_p18_c1",
+      "CDNS_2020_10K_p18_c2",
+      "CDNS_2020_10K_p18_c3",
+      "CDNS_2020_10K_p19_c1",
+      "CDNS_2020_10K_p19_c3",
+      "CDNS_2020_10K_p20_c1",
+      "CDNS_2020_10K_p20_c3",
+      "CDNS_2020_10K_p21_c1",
+      "CDNS_2020_10K_p21_c2",
+      "CDNS_2020_10K_p21_c3",
+      "CDNS_2020_10K_p21_c4",
+      "CDNS_2020_10K_p22_c1",
+      "CDNS_2020_10K_p23_c3",
+      "CDNS_2020_10K_p24_c2"
+    ]
+  },
+  {
+    "id": "Q90",
+    "question": "What were Cadence Design Systems' total revenue and net income in fiscal 2021?",
+    "ticker": "CDNS",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 15",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "CDNS_2021_10K_p63_c1",
+      "CDNS_2021_10K_p63_c2",
+      "CDNS_2021_10K_p64_c1",
+      "CDNS_2021_10K_p65_c2",
+      "CDNS_2021_10K_p66_c1",
+      "CDNS_2021_10K_p92_c3"
+    ]
+  },
+  {
+    "id": "Q91",
+    "question": "What were Cerner's revenues and net earnings in fiscal 2019?",
+    "ticker": "CERN",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 7",
+      "Item 6"
+    ],
+    "relevant_chunk_ids": [
+      "CERN_2019_10K_p50_c2",
+      "CERN_2019_10K_p53_c1"
+    ]
+  },
+  {
+    "id": "Q92",
+    "question": "What conclusion did Cerner reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "CERN",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": [
+      "CERN_2020_10K_p71_c5",
+      "CERN_2020_10K_p71_c6"
+    ]
+  },
+  {
+    "id": "Q93",
+    "question": "What factors drove Cerner's revenues, bookings, and operating results in fiscal 2021?",
+    "ticker": "CERN",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "CERN_2021_10K_p55_c3",
+      "CERN_2021_10K_p56_c1",
+      "CERN_2021_10K_p56_c2",
+      "CERN_2021_10K_p57_c1",
+      "CERN_2021_10K_p58_c1",
+      "CERN_2021_10K_p58_c2",
+      "CERN_2021_10K_p58_c3",
+      "CERN_2021_10K_p59_c1",
+      "CERN_2021_10K_p61_c1",
+      "CERN_2021_10K_p61_c2",
+      "CERN_2021_10K_p62_c1",
+      "CERN_2021_10K_p67_c1"
+    ]
+  },
+  {
+    "id": "Q94",
+    "question": "What uniform rental, first aid and safety, and fire protection services did Cintas describe in fiscal 2019?",
+    "ticker": "CTAS",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": [
+      "CTAS_2019_10K_p3_c1",
+      "CTAS_2019_10K_p3_c2",
+      "CTAS_2019_10K_p3_c3",
+      "CTAS_2019_10K_p3_c4"
+    ]
+  },
+  {
+    "id": "Q95",
+    "question": "What were Cintas' total revenue and net income in fiscal 2020?",
+    "ticker": "CTAS",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "CTAS_2020_10K_p4_c1",
+      "CTAS_2020_10K_p14_c2",
+      "CTAS_2020_10K_p35_c1",
+      "CTAS_2020_10K_p35_c2",
+      "CTAS_2020_10K_p36_c1",
+      "CTAS_2020_10K_p38_c3",
+      "CTAS_2020_10K_p39_c1",
+      "CTAS_2020_10K_p48_c1",
+      "CTAS_2020_10K_p67_c1"
+    ]
+  },
+  {
+    "id": "Q96",
+    "question": "What did Cintas report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "CTAS",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": [
+      "CTAS_2021_10K_p14_c3"
+    ]
+  },
+  {
+    "id": "Q97",
+    "question": "What quantitative and qualitative market risks did Datadog disclose in fiscal 2019?",
+    "ticker": "DDOG",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": [
+      "DDOG_2019_10K_p95_c1",
+      "DDOG_2019_10K_p95_c2"
+    ]
+  },
+  {
+    "id": "Q98",
+    "question": "What risks did Datadog identify regarding growth, competition, and security breaches in fiscal 2020?",
+    "ticker": "DDOG",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": [
+      "DDOG_2020_10K_p70_c3",
+      "DDOG_2020_10K_p70_c4",
+      "DDOG_2020_10K_p71_c1",
+      "DDOG_2020_10K_p71_c2",
+      "DDOG_2020_10K_p71_c3",
+      "DDOG_2020_10K_p72_c2",
+      "DDOG_2020_10K_p72_c4",
+      "DDOG_2020_10K_p73_c1",
+      "DDOG_2020_10K_p73_c2",
+      "DDOG_2020_10K_p73_c3",
+      "DDOG_2020_10K_p74_c1",
+      "DDOG_2020_10K_p74_c2",
+      "DDOG_2020_10K_p74_c3",
+      "DDOG_2020_10K_p74_c4",
+      "DDOG_2020_10K_p75_c1",
+      "DDOG_2020_10K_p75_c2",
+      "DDOG_2020_10K_p75_c3",
+      "DDOG_2020_10K_p76_c1",
+      "DDOG_2020_10K_p76_c3",
+      "DDOG_2020_10K_p76_c4",
+      "DDOG_2020_10K_p77_c1",
+      "DDOG_2020_10K_p77_c2",
+      "DDOG_2020_10K_p78_c1",
+      "DDOG_2020_10K_p78_c2",
+      "DDOG_2020_10K_p78_c3",
+      "DDOG_2020_10K_p79_c1",
+      "DDOG_2020_10K_p79_c2",
+      "DDOG_2020_10K_p79_c3",
+      "DDOG_2020_10K_p80_c1",
+      "DDOG_2020_10K_p80_c2",
+      "DDOG_2020_10K_p80_c3",
+      "DDOG_2020_10K_p83_c4",
+      "DDOG_2020_10K_p84_c2",
+      "DDOG_2020_10K_p88_c2",
+      "DDOG_2020_10K_p88_c4",
+      "DDOG_2020_10K_p88_c5",
+      "DDOG_2020_10K_p90_c1"
+    ]
+  },
+  {
+    "id": "Q99",
+    "question": "What were Datadog's revenue and net loss in fiscal 2021?",
+    "ticker": "DDOG",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "DDOG_2021_10K_p98_c1",
+      "DDOG_2021_10K_p100_c1",
+      "DDOG_2021_10K_p111_c1",
+      "DDOG_2021_10K_p112_c1",
+      "DDOG_2021_10K_p114_c1"
+    ]
+  },
+  {
+    "id": "Q100",
+    "question": "What were Dollar Tree's net sales and net income in fiscal 2019?",
+    "ticker": "DLTR",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "DLTR_2019_10K_p28_c4",
+      "DLTR_2019_10K_p47_c1",
+      "DLTR_2019_10K_p48_c1",
+      "DLTR_2019_10K_p50_c2",
+      "DLTR_2019_10K_p51_c1",
+      "DLTR_2019_10K_p67_c4",
+      "DLTR_2019_10K_p71_c1"
+    ]
+  },
+  {
+    "id": "Q101",
+    "question": "What conclusion did Dollar Tree reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "DLTR",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": [
+      "DLTR_2020_10K_p75_c2",
+      "DLTR_2020_10K_p75_c3"
+    ]
+  },
+  {
+    "id": "Q102",
+    "question": "What factors drove Dollar Tree's net sales, same-store sales, and operating results in fiscal 2021?",
+    "ticker": "DLTR",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "DLTR_2021_10K_p32_c2",
+      "DLTR_2021_10K_p34_c3",
+      "DLTR_2021_10K_p35_c2",
+      "DLTR_2021_10K_p35_c3",
+      "DLTR_2021_10K_p35_c4",
+      "DLTR_2021_10K_p36_c2",
+      "DLTR_2021_10K_p36_c4",
+      "DLTR_2021_10K_p37_c4",
+      "DLTR_2021_10K_p38_c2",
+      "DLTR_2021_10K_p38_c3",
+      "DLTR_2021_10K_p38_c4",
+      "DLTR_2021_10K_p38_c5",
+      "DLTR_2021_10K_p39_c1",
+      "DLTR_2021_10K_p39_c2",
+      "DLTR_2021_10K_p39_c3",
+      "DLTR_2021_10K_p40_c1",
+      "DLTR_2021_10K_p40_c2"
+    ]
+  },
+  {
+    "id": "Q103",
+    "question": "What microinverter, storage, and monitoring products did Enphase Energy describe in fiscal 2019?",
+    "ticker": "ENPH",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": [
+      "ENPH_2019_10K_p4_c2",
+      "ENPH_2019_10K_p4_c3",
+      "ENPH_2019_10K_p5_c1",
+      "ENPH_2019_10K_p5_c2",
+      "ENPH_2019_10K_p5_c3",
+      "ENPH_2019_10K_p6_c1",
+      "ENPH_2019_10K_p6_c2",
+      "ENPH_2019_10K_p6_c3",
+      "ENPH_2019_10K_p7_c1",
+      "ENPH_2019_10K_p7_c2",
+      "ENPH_2019_10K_p8_c2",
+      "ENPH_2019_10K_p8_c3",
+      "ENPH_2019_10K_p9_c1"
+    ]
+  },
+  {
+    "id": "Q104",
+    "question": "What were Enphase Energy's net revenues and net income in fiscal 2020?",
+    "ticker": "ENPH",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "ENPH_2020_10K_p54_c1",
+      "ENPH_2020_10K_p54_c2",
+      "ENPH_2020_10K_p59_c1",
+      "ENPH_2020_10K_p60_c2",
+      "ENPH_2020_10K_p79_c1",
+      "ENPH_2020_10K_p80_c1",
+      "ENPH_2020_10K_p82_c1",
+      "ENPH_2020_10K_p83_c1",
+      "ENPH_2020_10K_p123_c1"
+    ]
+  },
+  {
+    "id": "Q105",
+    "question": "What did Enphase Energy report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "ENPH",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": [
+      "ENPH_2021_10K_p49_c2",
+      "ENPH_2021_10K_p49_c3"
+    ]
+  },
+  {
+    "id": "Q106",
+    "question": "What quantitative and qualitative market risks did Fastenal disclose in fiscal 2019?",
+    "ticker": "FAST",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": [
+      "FAST_2019_10K_p49_c1",
+      "FAST_2019_10K_p49_c2"
+    ]
+  },
+  {
+    "id": "Q107",
+    "question": "What risks did Fastenal identify regarding economic conditions, suppliers, and its workforce in fiscal 2020?",
+    "ticker": "FAST",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": [
+      "FAST_2020_10K_p29_c3",
+      "FAST_2020_10K_p29_c4",
+      "FAST_2020_10K_p30_c2",
+      "FAST_2020_10K_p30_c3",
+      "FAST_2020_10K_p30_c4",
+      "FAST_2020_10K_p32_c2"
+    ]
+  },
+  {
+    "id": "Q108",
+    "question": "What were Fastenal's net sales and net earnings in fiscal 2021?",
+    "ticker": "FAST",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "FAST_2021_10K_p16_c3",
+      "FAST_2021_10K_p16_c4",
+      "FAST_2021_10K_p42_c3",
+      "FAST_2021_10K_p44_c1",
+      "FAST_2021_10K_p51_c2",
+      "FAST_2021_10K_p52_c1",
+      "FAST_2021_10K_p52_c2",
+      "FAST_2021_10K_p62_c1",
+      "FAST_2021_10K_p63_c1",
+      "FAST_2021_10K_p64_c1",
+      "FAST_2021_10K_p65_c1",
+      "FAST_2021_10K_p69_c3"
+    ]
+  },
+  {
+    "id": "Q109",
+    "question": "What were Incyte's total revenues and net income in fiscal 2019?",
+    "ticker": "INCY",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "INCY_2019_10K_p57_c2",
+      "INCY_2019_10K_p57_c3",
+      "INCY_2019_10K_p78_c1",
+      "INCY_2019_10K_p78_c2",
+      "INCY_2019_10K_p79_c1",
+      "INCY_2019_10K_p80_c3",
+      "INCY_2019_10K_p81_c1",
+      "INCY_2019_10K_p81_c2",
+      "INCY_2019_10K_p81_c3",
+      "INCY_2019_10K_p91_c1",
+      "INCY_2019_10K_p114_c1"
+    ]
+  },
+  {
+    "id": "Q110",
+    "question": "What conclusion did Incyte reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "INCY",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": [
+      "INCY_2020_10K_p121_c2",
+      "INCY_2020_10K_p121_c3"
+    ]
+  },
+  {
+    "id": "Q111",
+    "question": "What factors drove Incyte's product revenues, royalties, and operating results in fiscal 2021?",
+    "ticker": "INCY",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "INCY_2021_10K_p68_c3",
+      "INCY_2021_10K_p68_c4",
+      "INCY_2021_10K_p70_c1",
+      "INCY_2021_10K_p71_c1",
+      "INCY_2021_10K_p73_c2",
+      "INCY_2021_10K_p73_c3",
+      "INCY_2021_10K_p74_c2",
+      "INCY_2021_10K_p74_c3",
+      "INCY_2021_10K_p74_c4",
+      "INCY_2021_10K_p75_c1",
+      "INCY_2021_10K_p76_c2"
+    ]
+  },
+  {
+    "id": "Q112",
+    "question": "What brands, product categories, and segments did Kraft Heinz describe in fiscal 2019?",
+    "ticker": "KHC",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": [
+      "KHC_2019_10K_p6_c1",
+      "KHC_2019_10K_p6_c2",
+      "KHC_2019_10K_p6_c3",
+      "KHC_2019_10K_p7_c3",
+      "KHC_2019_10K_p9_c2",
+      "KHC_2019_10K_p9_c3",
+      "KHC_2019_10K_p10_c1",
+      "KHC_2019_10K_p10_c2"
+    ]
+  },
+  {
+    "id": "Q113",
+    "question": "What were Kraft Heinz's net sales and net income in fiscal 2020?",
+    "ticker": "KHC",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "KHC_2020_10K_p27_c6",
+      "KHC_2020_10K_p29_c1",
+      "KHC_2020_10K_p29_c3",
+      "KHC_2020_10K_p29_c4",
+      "KHC_2020_10K_p32_c1",
+      "KHC_2020_10K_p42_c3",
+      "KHC_2020_10K_p47_c1",
+      "KHC_2020_10K_p53_c1",
+      "KHC_2020_10K_p54_c1",
+      "KHC_2020_10K_p57_c1",
+      "KHC_2020_10K_p114_c4",
+      "KHC_2020_10K_p115_c2",
+      "KHC_2020_10K_p116_c1",
+      "KHC_2020_10K_p117_c1"
+    ]
+  },
+  {
+    "id": "Q114",
+    "question": "What did Kraft Heinz report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "KHC",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": [
+      "KHC_2021_10K_p27_c4"
+    ]
+  },
+  {
+    "id": "Q115",
+    "question": "What quantitative and qualitative market risks did Logitech disclose in fiscal 2019?",
+    "ticker": "LOGI",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": [
+      "LOGI_2019_10K_p57_c2",
+      "LOGI_2019_10K_p57_c3",
+      "LOGI_2019_10K_p58_c1"
+    ]
+  },
+  {
+    "id": "Q116",
+    "question": "What risks did Logitech identify regarding competition, product demand, and its supply chain in fiscal 2020?",
+    "ticker": "LOGI",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": [
+      "LOGI_2020_10K_p19_c1",
+      "LOGI_2020_10K_p19_c2",
+      "LOGI_2020_10K_p19_c3",
+      "LOGI_2020_10K_p20_c1",
+      "LOGI_2020_10K_p20_c2",
+      "LOGI_2020_10K_p22_c1",
+      "LOGI_2020_10K_p22_c3",
+      "LOGI_2020_10K_p24_c1",
+      "LOGI_2020_10K_p25_c2",
+      "LOGI_2020_10K_p26_c1",
+      "LOGI_2020_10K_p26_c2",
+      "LOGI_2020_10K_p28_c1",
+      "LOGI_2020_10K_p28_c2",
+      "LOGI_2020_10K_p28_c3",
+      "LOGI_2020_10K_p29_c1",
+      "LOGI_2020_10K_p29_c2",
+      "LOGI_2020_10K_p30_c1",
+      "LOGI_2020_10K_p30_c2",
+      "LOGI_2020_10K_p30_c3",
+      "LOGI_2020_10K_p31_c1",
+      "LOGI_2020_10K_p31_c2",
+      "LOGI_2020_10K_p32_c1",
+      "LOGI_2020_10K_p32_c2",
+      "LOGI_2020_10K_p32_c3",
+      "LOGI_2020_10K_p33_c1",
+      "LOGI_2020_10K_p34_c3"
+    ]
+  },
+  {
+    "id": "Q117",
+    "question": "What were Logitech's net sales and net income in fiscal 2021?",
+    "ticker": "LOGI",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "LOGI_2021_10K_p10_c3",
+      "LOGI_2021_10K_p44_c3",
+      "LOGI_2021_10K_p49_c4",
+      "LOGI_2021_10K_p51_c2"
+    ]
+  },
+  {
+    "id": "Q118",
+    "question": "What were Nasdaq's total revenues and net income in fiscal 2019?",
+    "ticker": "NDAQ",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "NDAQ_2019_10K_p33_c2",
+      "NDAQ_2019_10K_p36_c3",
+      "NDAQ_2019_10K_p69_c1",
+      "NDAQ_2019_10K_p69_c2",
+      "NDAQ_2019_10K_p70_c1",
+      "NDAQ_2019_10K_p71_c1",
+      "NDAQ_2019_10K_p72_c1",
+      "NDAQ_2019_10K_p101_c1",
+      "NDAQ_2019_10K_p111_c1"
+    ]
+  },
+  {
+    "id": "Q119",
+    "question": "What conclusion did Nasdaq reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "NDAQ",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": [
+      "NDAQ_2020_10K_p62_c2",
+      "NDAQ_2020_10K_p62_c3"
+    ]
+  },
+  {
+    "id": "Q120",
+    "question": "What factors drove Nasdaq's net revenues and operating results across its divisions in fiscal 2021?",
+    "ticker": "NDAQ",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "NDAQ_2021_10K_p40_c5",
+      "NDAQ_2021_10K_p40_c7",
+      "NDAQ_2021_10K_p41_c7",
+      "NDAQ_2021_10K_p41_c8",
+      "NDAQ_2021_10K_p43_c4",
+      "NDAQ_2021_10K_p44_c1",
+      "NDAQ_2021_10K_p46_c7",
+      "NDAQ_2021_10K_p58_c1",
+      "NDAQ_2021_10K_p58_c3"
+    ]
+  },
+  {
+    "id": "Q121",
+    "question": "What storage, data management, and cloud products did NetApp describe in fiscal 2019?",
+    "ticker": "NTAP",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": [
+      "NTAP_2019_10K_p5_c1",
+      "NTAP_2019_10K_p5_c2",
+      "NTAP_2019_10K_p5_c3",
+      "NTAP_2019_10K_p6_c1",
+      "NTAP_2019_10K_p6_c2",
+      "NTAP_2019_10K_p7_c1",
+      "NTAP_2019_10K_p7_c2",
+      "NTAP_2019_10K_p8_c1",
+      "NTAP_2019_10K_p8_c2",
+      "NTAP_2019_10K_p8_c3",
+      "NTAP_2019_10K_p9_c1",
+      "NTAP_2019_10K_p10_c2",
+      "NTAP_2019_10K_p10_c3",
+      "NTAP_2019_10K_p12_c1",
+      "NTAP_2019_10K_p12_c3"
+    ]
+  },
+  {
+    "id": "Q122",
+    "question": "What were NetApp's net revenues and net income in fiscal 2020?",
+    "ticker": "NTAP",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "NTAP_2020_10K_p32_c2",
+      "NTAP_2020_10K_p34_c2",
+      "NTAP_2020_10K_p40_c2",
+      "NTAP_2020_10K_p41_c1",
+      "NTAP_2020_10K_p48_c1",
+      "NTAP_2020_10K_p56_c1",
+      "NTAP_2020_10K_p57_c1",
+      "NTAP_2020_10K_p58_c1",
+      "NTAP_2020_10K_p59_c2",
+      "NTAP_2020_10K_p70_c4",
+      "NTAP_2020_10K_p85_c1",
+      "NTAP_2020_10K_p85_c3"
+    ]
+  },
+  {
+    "id": "Q123",
+    "question": "What did NetApp report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "NTAP",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": [
+      "NTAP_2021_10K_p28_c3"
+    ]
+  },
+  {
+    "id": "Q124",
+    "question": "What quantitative and qualitative market risks did Okta disclose in fiscal 2019?",
+    "ticker": "OKTA",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": [
+      "OKTA_2019_10K_p140_c3",
+      "OKTA_2019_10K_p140_c4"
+    ]
+  },
+  {
+    "id": "Q125",
+    "question": "What risks did Okta identify regarding security breaches, competition, and growth in fiscal 2020?",
+    "ticker": "OKTA",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": [
+      "OKTA_2020_10K_p81_c1",
+      "OKTA_2020_10K_p81_c2",
+      "OKTA_2020_10K_p81_c3",
+      "OKTA_2020_10K_p82_c1",
+      "OKTA_2020_10K_p83_c1",
+      "OKTA_2020_10K_p83_c2",
+      "OKTA_2020_10K_p84_c1",
+      "OKTA_2020_10K_p84_c3",
+      "OKTA_2020_10K_p85_c1",
+      "OKTA_2020_10K_p85_c2",
+      "OKTA_2020_10K_p85_c3",
+      "OKTA_2020_10K_p86_c1",
+      "OKTA_2020_10K_p86_c2",
+      "OKTA_2020_10K_p88_c1",
+      "OKTA_2020_10K_p89_c1",
+      "OKTA_2020_10K_p89_c3",
+      "OKTA_2020_10K_p90_c1",
+      "OKTA_2020_10K_p91_c1",
+      "OKTA_2020_10K_p91_c2",
+      "OKTA_2020_10K_p91_c3",
+      "OKTA_2020_10K_p92_c1",
+      "OKTA_2020_10K_p98_c2",
+      "OKTA_2020_10K_p104_c3",
+      "OKTA_2020_10K_p105_c1",
+      "OKTA_2020_10K_p107_c1",
+      "OKTA_2020_10K_p107_c2",
+      "OKTA_2020_10K_p108_c2"
+    ]
+  },
+  {
+    "id": "Q126",
+    "question": "What were Okta's total revenue and net loss in fiscal 2021?",
+    "ticker": "OKTA",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "OKTA_2021_10K_p121_c1",
+      "OKTA_2021_10K_p121_c2",
+      "OKTA_2021_10K_p123_c2",
+      "OKTA_2021_10K_p127_c1",
+      "OKTA_2021_10K_p128_c1",
+      "OKTA_2021_10K_p129_c2",
+      "OKTA_2021_10K_p143_c1",
+      "OKTA_2021_10K_p143_c2",
+      "OKTA_2021_10K_p144_c1",
+      "OKTA_2021_10K_p147_c1"
+    ]
+  },
+  {
+    "id": "Q127",
+    "question": "What were Synopsys' total revenue and net income in fiscal 2019?",
+    "ticker": "SNPS",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "SNPS_2019_10K_p32_c3",
+      "SNPS_2019_10K_p54_c1",
+      "SNPS_2019_10K_p54_c2",
+      "SNPS_2019_10K_p55_c1",
+      "SNPS_2019_10K_p56_c3",
+      "SNPS_2019_10K_p57_c1",
+      "SNPS_2019_10K_p64_c1",
+      "SNPS_2019_10K_p64_c2",
+      "SNPS_2019_10K_p69_c1",
+      "SNPS_2019_10K_p93_c1"
+    ]
+  },
+  {
+    "id": "Q128",
+    "question": "What conclusion did Synopsys reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "SNPS",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": [
+      "SNPS_2020_10K_p95_c2",
+      "SNPS_2020_10K_p95_c3"
+    ]
+  },
+  {
+    "id": "Q129",
+    "question": "What factors drove Synopsys' revenue and operating results in fiscal 2021?",
+    "ticker": "SNPS",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "SNPS_2021_10K_p35_c4",
+      "SNPS_2021_10K_p36_c1",
+      "SNPS_2021_10K_p36_c2",
+      "SNPS_2021_10K_p36_c3",
+      "SNPS_2021_10K_p37_c2",
+      "SNPS_2021_10K_p38_c1",
+      "SNPS_2021_10K_p39_c2",
+      "SNPS_2021_10K_p40_c1",
+      "SNPS_2021_10K_p40_c2",
+      "SNPS_2021_10K_p41_c2",
+      "SNPS_2021_10K_p41_c3",
+      "SNPS_2021_10K_p41_c4",
+      "SNPS_2021_10K_p41_c5",
+      "SNPS_2021_10K_p41_c6",
+      "SNPS_2021_10K_p42_c2",
+      "SNPS_2021_10K_p42_c4",
+      "SNPS_2021_10K_p43_c1",
+      "SNPS_2021_10K_p44_c1",
+      "SNPS_2021_10K_p45_c2",
+      "SNPS_2021_10K_p45_c4",
+      "SNPS_2021_10K_p46_c3"
+    ]
+  },
+  {
+    "id": "Q130",
+    "question": "What products and cloud services did Splunk describe for security and IT operations in fiscal 2019?",
+    "ticker": "SPLK",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": [
+      "SPLK_2019_10K_p85_c1",
+      "SPLK_2019_10K_p85_c2",
+      "SPLK_2019_10K_p85_c3",
+      "SPLK_2019_10K_p86_c1",
+      "SPLK_2019_10K_p86_c2",
+      "SPLK_2019_10K_p86_c3",
+      "SPLK_2019_10K_p87_c1",
+      "SPLK_2019_10K_p87_c2",
+      "SPLK_2019_10K_p88_c1",
+      "SPLK_2019_10K_p88_c3",
+      "SPLK_2019_10K_p89_c1",
+      "SPLK_2019_10K_p89_c2",
+      "SPLK_2019_10K_p90_c1",
+      "SPLK_2019_10K_p90_c2",
+      "SPLK_2019_10K_p91_c2",
+      "SPLK_2019_10K_p93_c2"
+    ]
+  },
+  {
+    "id": "Q131",
+    "question": "What were Splunk's total revenues and net loss in fiscal 2020?",
+    "ticker": "SPLK",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "SPLK_2020_10K_p132_c2",
+      "SPLK_2020_10K_p132_c3",
+      "SPLK_2020_10K_p143_c2",
+      "SPLK_2020_10K_p143_c4",
+      "SPLK_2020_10K_p161_c1",
+      "SPLK_2020_10K_p161_c2",
+      "SPLK_2020_10K_p162_c1",
+      "SPLK_2020_10K_p163_c1",
+      "SPLK_2020_10K_p165_c4",
+      "SPLK_2020_10K_p189_c8",
+      "SPLK_2020_10K_p190_c1",
+      "SPLK_2020_10K_p193_c3"
+    ]
+  },
+  {
+    "id": "Q132",
+    "question": "What did Splunk report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "SPLK",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": [
+      "SPLK_2021_10K_p129_c2"
+    ]
+  },
+  {
+    "id": "Q133",
+    "question": "What quantitative and qualitative market risks did Seagate disclose in fiscal 2019?",
+    "ticker": "STX",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": [
+      "STX_2019_10K_p49_c1",
+      "STX_2019_10K_p49_c2",
+      "STX_2019_10K_p49_c3",
+      "STX_2019_10K_p50_c1",
+      "STX_2019_10K_p50_c2"
+    ]
+  },
+  {
+    "id": "Q134",
+    "question": "What risks did Seagate identify regarding storage demand, competition, and component supply in fiscal 2020?",
+    "ticker": "STX",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": [
+      "STX_2020_10K_p15_c2",
+      "STX_2020_10K_p15_c3",
+      "STX_2020_10K_p15_c4",
+      "STX_2020_10K_p16_c2",
+      "STX_2020_10K_p17_c1",
+      "STX_2020_10K_p17_c2",
+      "STX_2020_10K_p17_c3",
+      "STX_2020_10K_p18_c1",
+      "STX_2020_10K_p19_c2",
+      "STX_2020_10K_p20_c2",
+      "STX_2020_10K_p20_c3",
+      "STX_2020_10K_p21_c1",
+      "STX_2020_10K_p21_c2",
+      "STX_2020_10K_p25_c3",
+      "STX_2020_10K_p27_c1",
+      "STX_2020_10K_p27_c2",
+      "STX_2020_10K_p27_c3",
+      "STX_2020_10K_p28_c1",
+      "STX_2020_10K_p28_c2",
+      "STX_2020_10K_p29_c1",
+      "STX_2020_10K_p29_c2",
+      "STX_2020_10K_p30_c2",
+      "STX_2020_10K_p31_c1",
+      "STX_2020_10K_p31_c2",
+      "STX_2020_10K_p31_c3",
+      "STX_2020_10K_p32_c2",
+      "STX_2020_10K_p33_c1"
+    ]
+  },
+  {
+    "id": "Q135",
+    "question": "What were Seagate's revenue and net income in fiscal 2021?",
+    "ticker": "STX",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "STX_2021_10K_p39_c2",
+      "STX_2021_10K_p40_c4",
+      "STX_2021_10K_p54_c1",
+      "STX_2021_10K_p55_c1",
+      "STX_2021_10K_p56_c1",
+      "STX_2021_10K_p57_c2",
+      "STX_2021_10K_p89_c2"
+    ]
+  },
+  {
+    "id": "Q136",
+    "question": "What were Tractor Supply's net sales and net income in fiscal 2019?",
+    "ticker": "TSCO",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "TSCO_2019_10K_p32_c2",
+      "TSCO_2019_10K_p38_c1",
+      "TSCO_2019_10K_p55_c1",
+      "TSCO_2019_10K_p56_c1",
+      "TSCO_2019_10K_p58_c3",
+      "TSCO_2019_10K_p59_c1",
+      "TSCO_2019_10K_p77_c4"
+    ]
+  },
+  {
+    "id": "Q137",
+    "question": "What conclusion did Tractor Supply reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "TSCO",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": [
+      "TSCO_2020_10K_p90_c4"
+    ]
+  },
+  {
+    "id": "Q138",
+    "question": "What factors drove Tractor Supply's net sales, comparable store sales, and operating results in fiscal 2021?",
+    "ticker": "TSCO",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "TSCO_2021_10K_p41_c4",
+      "TSCO_2021_10K_p42_c1",
+      "TSCO_2021_10K_p42_c2",
+      "TSCO_2021_10K_p43_c1",
+      "TSCO_2021_10K_p46_c1",
+      "TSCO_2021_10K_p46_c2",
+      "TSCO_2021_10K_p46_c3",
+      "TSCO_2021_10K_p47_c4",
+      "TSCO_2021_10K_p47_c5"
+    ]
+  },
+  {
+    "id": "Q139",
+    "question": "How did United Airlines describe its hubs, regional operations, and MileagePlus program in fiscal 2019?",
+    "ticker": "UAL",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": [
+      "UAL_2019_10K_p3_c2",
+      "UAL_2019_10K_p3_c3",
+      "UAL_2019_10K_p4_c1",
+      "UAL_2019_10K_p4_c2",
+      "UAL_2019_10K_p4_c3"
+    ]
+  },
+  {
+    "id": "Q140",
+    "question": "What were United Airlines' total operating revenue and net loss in fiscal 2020?",
+    "ticker": "UAL",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "UAL_2020_10K_p35_c4",
+      "UAL_2020_10K_p39_c2",
+      "UAL_2020_10K_p57_c1",
+      "UAL_2020_10K_p57_c2",
+      "UAL_2020_10K_p58_c1",
+      "UAL_2020_10K_p61_c1",
+      "UAL_2020_10K_p62_c2",
+      "UAL_2020_10K_p63_c1"
+    ]
+  },
+  {
+    "id": "Q141",
+    "question": "What did United Airlines report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "UAL",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": [
+      "UAL_2021_10K_p33_c5",
+      "UAL_2021_10K_p34_c1"
+    ]
+  },
+  {
+    "id": "Q142",
+    "question": "What quantitative and qualitative market risks did Western Digital disclose in fiscal 2019?",
+    "ticker": "WDC",
+    "fiscal_year": 2019,
+    "category": "market_risk",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7A"
+    ],
+    "relevant_chunk_ids": [
+      "WDC_2019_10K_p46_c2",
+      "WDC_2019_10K_p47_c1",
+      "WDC_2019_10K_p47_c2",
+      "WDC_2019_10K_p47_c3"
+    ]
+  },
+  {
+    "id": "Q143",
+    "question": "What risks did Western Digital identify regarding demand, competition, and flash memory supply in fiscal 2020?",
+    "ticker": "WDC",
+    "fiscal_year": 2020,
+    "category": "risk_factors",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1A"
+    ],
+    "relevant_chunk_ids": [
+      "WDC_2020_10K_p15_c2",
+      "WDC_2020_10K_p15_c3",
+      "WDC_2020_10K_p15_c4",
+      "WDC_2020_10K_p16_c1",
+      "WDC_2020_10K_p16_c2",
+      "WDC_2020_10K_p17_c1",
+      "WDC_2020_10K_p17_c2",
+      "WDC_2020_10K_p17_c3",
+      "WDC_2020_10K_p18_c2",
+      "WDC_2020_10K_p18_c3",
+      "WDC_2020_10K_p19_c1",
+      "WDC_2020_10K_p20_c2",
+      "WDC_2020_10K_p20_c3",
+      "WDC_2020_10K_p21_c1",
+      "WDC_2020_10K_p21_c2",
+      "WDC_2020_10K_p21_c3",
+      "WDC_2020_10K_p22_c1",
+      "WDC_2020_10K_p24_c1",
+      "WDC_2020_10K_p24_c2",
+      "WDC_2020_10K_p24_c3",
+      "WDC_2020_10K_p25_c1",
+      "WDC_2020_10K_p25_c2",
+      "WDC_2020_10K_p30_c1",
+      "WDC_2020_10K_p30_c3"
+    ]
+  },
+  {
+    "id": "Q144",
+    "question": "What were Western Digital's revenue and net income in fiscal 2021?",
+    "ticker": "WDC",
+    "fiscal_year": 2021,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "WDC_2021_10K_p37_c1",
+      "WDC_2021_10K_p37_c2",
+      "WDC_2021_10K_p38_c1",
+      "WDC_2021_10K_p52_c1",
+      "WDC_2021_10K_p53_c1",
+      "WDC_2021_10K_p54_c1",
+      "WDC_2021_10K_p55_c2",
+      "WDC_2021_10K_p65_c1",
+      "WDC_2021_10K_p98_c1"
+    ]
+  },
+  {
+    "id": "Q145",
+    "question": "What were Wynn Resorts' operating revenues and net income in fiscal 2019?",
+    "ticker": "WYNN",
+    "fiscal_year": 2019,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "WYNN_2019_10K_p45_c2",
+      "WYNN_2019_10K_p45_c3",
+      "WYNN_2019_10K_p48_c3",
+      "WYNN_2019_10K_p49_c3",
+      "WYNN_2019_10K_p72_c1",
+      "WYNN_2019_10K_p72_c2",
+      "WYNN_2019_10K_p73_c1",
+      "WYNN_2019_10K_p74_c5",
+      "WYNN_2019_10K_p76_c1",
+      "WYNN_2019_10K_p127_c3",
+      "WYNN_2019_10K_p128_c2",
+      "WYNN_2019_10K_p130_c3",
+      "WYNN_2019_10K_p131_c1"
+    ]
+  },
+  {
+    "id": "Q146",
+    "question": "What conclusion did Wynn Resorts reach about disclosure controls and internal control over financial reporting in fiscal 2020?",
+    "ticker": "WYNN",
+    "fiscal_year": 2020,
+    "category": "controls",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 9A"
+    ],
+    "relevant_chunk_ids": [
+      "WYNN_2020_10K_p113_c2",
+      "WYNN_2020_10K_p113_c3"
+    ]
+  },
+  {
+    "id": "Q147",
+    "question": "What factors drove Wynn Resorts' operating revenues and operating results in Las Vegas and Macau in fiscal 2021?",
+    "ticker": "WYNN",
+    "fiscal_year": 2021,
+    "category": "results_of_operations",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "WYNN_2021_10K_p37_c1",
+      "WYNN_2021_10K_p37_c2",
+      "WYNN_2021_10K_p37_c3",
+      "WYNN_2021_10K_p38_c1",
+      "WYNN_2021_10K_p38_c2",
+      "WYNN_2021_10K_p38_c3",
+      "WYNN_2021_10K_p39_c1",
+      "WYNN_2021_10K_p40_c1",
+      "WYNN_2021_10K_p40_c2",
+      "WYNN_2021_10K_p40_c4",
+      "WYNN_2021_10K_p41_c1",
+      "WYNN_2021_10K_p41_c2",
+      "WYNN_2021_10K_p41_c3",
+      "WYNN_2021_10K_p42_c1",
+      "WYNN_2021_10K_p42_c2",
+      "WYNN_2021_10K_p42_c3",
+      "WYNN_2021_10K_p43_c1",
+      "WYNN_2021_10K_p43_c3",
+      "WYNN_2021_10K_p44_c1",
+      "WYNN_2021_10K_p44_c2",
+      "WYNN_2021_10K_p45_c2",
+      "WYNN_2021_10K_p45_c3",
+      "WYNN_2021_10K_p46_c3",
+      "WYNN_2021_10K_p46_c4",
+      "WYNN_2021_10K_p47_c1",
+      "WYNN_2021_10K_p47_c2",
+      "WYNN_2021_10K_p47_c3",
+      "WYNN_2021_10K_p47_c4",
+      "WYNN_2021_10K_p49_c1",
+      "WYNN_2021_10K_p50_c4",
+      "WYNN_2021_10K_p50_c5",
+      "WYNN_2021_10K_p51_c2",
+      "WYNN_2021_10K_p52_c2",
+      "WYNN_2021_10K_p52_c3",
+      "WYNN_2021_10K_p53_c3"
+    ]
+  },
+  {
+    "id": "Q148",
+    "question": "What electric and natural gas utility operations did Xcel Energy describe in fiscal 2019?",
+    "ticker": "XEL",
+    "fiscal_year": 2019,
+    "category": "business",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 1"
+    ],
+    "relevant_chunk_ids": [
+      "XEL_2019_10K_p19_c1",
+      "XEL_2019_10K_p19_c2",
+      "XEL_2019_10K_p19_c3",
+      "XEL_2019_10K_p20_c2",
+      "XEL_2019_10K_p20_c4",
+      "XEL_2019_10K_p21_c1",
+      "XEL_2019_10K_p22_c1",
+      "XEL_2019_10K_p22_c2",
+      "XEL_2019_10K_p22_c3",
+      "XEL_2019_10K_p23_c1",
+      "XEL_2019_10K_p24_c1",
+      "XEL_2019_10K_p24_c2",
+      "XEL_2019_10K_p24_c4",
+      "XEL_2019_10K_p24_c5",
+      "XEL_2019_10K_p24_c6",
+      "XEL_2019_10K_p25_c2",
+      "XEL_2019_10K_p25_c3",
+      "XEL_2019_10K_p25_c4",
+      "XEL_2019_10K_p26_c1",
+      "XEL_2019_10K_p26_c2",
+      "XEL_2019_10K_p26_c3",
+      "XEL_2019_10K_p26_c6",
+      "XEL_2019_10K_p26_c7",
+      "XEL_2019_10K_p26_c8",
+      "XEL_2019_10K_p26_c9",
+      "XEL_2019_10K_p27_c1",
+      "XEL_2019_10K_p27_c2",
+      "XEL_2019_10K_p27_c3",
+      "XEL_2019_10K_p27_c4",
+      "XEL_2019_10K_p27_c5",
+      "XEL_2019_10K_p27_c6",
+      "XEL_2019_10K_p28_c1",
+      "XEL_2019_10K_p28_c2",
+      "XEL_2019_10K_p28_c3",
+      "XEL_2019_10K_p28_c4",
+      "XEL_2019_10K_p29_c1",
+      "XEL_2019_10K_p29_c2",
+      "XEL_2019_10K_p29_c3",
+      "XEL_2019_10K_p29_c4",
+      "XEL_2019_10K_p30_c1",
+      "XEL_2019_10K_p30_c2",
+      "XEL_2019_10K_p30_c3"
+    ]
+  },
+  {
+    "id": "Q149",
+    "question": "What were Xcel Energy's total operating revenues and net income in fiscal 2020?",
+    "ticker": "XEL",
+    "fiscal_year": 2020,
+    "category": "numeric_results",
+    "difficulty": "hard",
+    "expected_sections": [
+      "Item 8",
+      "Item 7"
+    ],
+    "relevant_chunk_ids": [
+      "XEL_2020_10K_p43_c8",
+      "XEL_2020_10K_p66_c1",
+      "XEL_2020_10K_p66_c2",
+      "XEL_2020_10K_p67_c1",
+      "XEL_2020_10K_p68_c1",
+      "XEL_2020_10K_p70_c2",
+      "XEL_2020_10K_p79_c3",
+      "XEL_2020_10K_p98_c4",
+      "XEL_2020_10K_p104_c1"
+    ]
+  },
+  {
+    "id": "Q150",
+    "question": "What did Xcel Energy report under Item 3, Legal Proceedings, in fiscal 2021?",
+    "ticker": "XEL",
+    "fiscal_year": 2021,
+    "category": "legal_proceedings",
+    "difficulty": "medium",
+    "expected_sections": [
+      "Item 3"
+    ],
+    "relevant_chunk_ids": [
+      "XEL_2021_10K_p39_c1",
+      "XEL_2021_10K_p39_c2",
+      "XEL_2021_10K_p39_c3",
+      "XEL_2021_10K_p39_c4",
+      "XEL_2021_10K_p39_c5"
+    ]
   }
 ]
