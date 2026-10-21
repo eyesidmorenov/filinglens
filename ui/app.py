@@ -9,6 +9,7 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 CONNECTION_ERROR = "I couldn't connect to the server. Please try again in a moment."
 SEARCHING = "_Searching the 10-K reports…_"
+SUGGESTION = "suggested_question"  # name of the suggested-question buttons
 
 
 def source_label(i: int, s: dict) -> str:
@@ -71,9 +72,42 @@ async def on_chat_end():
         task.cancel()
 
 
+async def suggestion_buttons(question: str) -> list[cl.Action]:
+    """2-3 follow-up questions from the API (templates, no Claude), as buttons under the answer."""
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5)) as client:
+            response = await client.get(f"{API_URL}/suggestions", params={"question": question})
+            response.raise_for_status()
+            suggestions = response.json().get("suggestions", [])
+    except (httpx.HTTPError, ValueError):
+        return []  # suggestions are an extra: without them the answer is still complete
+    return [
+        cl.Action(name=SUGGESTION, payload={"question": q}, label=q, icon="message-circle-question")
+        for q in suggestions
+    ]
+
+
+@cl.action_callback(SUGGESTION)
+async def on_suggestion(action: cl.Action):
+    # As if the user had typed it: their bubble first, then the answer
+    question = action.payload["question"]
+    await cl.Message(content=question, type="user_message").send()
+    await answer(question)
+
+
 @cl.on_message
 async def main(message: cl.Message):
+    await answer(message.content)
+
+
+async def answer(question: str):
     cl.user_session.set("answer_task", asyncio.current_task())
+    # Only the latest answer keeps its suggestions
+    previous = cl.user_session.get("suggestions_message")
+    if previous:
+        await previous.remove_actions()
+        cl.user_session.set("suggestions_message", None)
+
     # Shown while the API searches and Claude starts; replaced by the first words of the answer
     msg = cl.Message(content=SEARCHING)
     await msg.send()
@@ -84,7 +118,7 @@ async def main(message: cl.Message):
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(120, connect=10)) as client:
             async with client.stream(
-                "POST", f"{API_URL}/ask/stream", json={"question": message.content}
+                "POST", f"{API_URL}/ask/stream", json={"question": question}
             ) as response:
                 response.raise_for_status()
                 # One JSON event per line: pieces of text while Claude writes, then the final answer
@@ -111,4 +145,9 @@ async def main(message: cl.Message):
 
     # The streamed text was a preview: replace it with the final answer and its citations
     msg.content, msg.elements = format_answer(final)
+    # Suggestions only under a real answer (with sources), not under "which company?" messages
+    if final.get("sources"):
+        msg.actions = await suggestion_buttons(question)
+        if msg.actions:
+            cl.user_session.set("suggestions_message", msg)
     await msg.send()
