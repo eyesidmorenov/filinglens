@@ -8,3 +8,5 @@ haystack-ai==3.3.0
 elasticsearch-haystack==6.4.1
 sentence-transformers==6.1.0
 sentence-transformers-haystack==0.2.0
+# Anthropic 2.0 (Oct 2026) breaks anthropic-haystack ("Cannot instantiate typing.Union"): stay on 1.x
+anthropic>=1.9.0,<2
