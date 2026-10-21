@@ -1,0 +1,71 @@
+rank,company,ticker,size_mb_2019_2021,market_cap_usd_bn,name_on_yahoo
+1,interactive-brokers-group-inc,IBKR,42.7,141.3,"Interactive Brokers Group, Inc."
+2,cme-group-inc,CME,2.5,106.2,CME Group Inc.
+3,teradyne-inc,TER,1.7,52.6,"Teradyne, Inc."
+4,keurig-dr-pepper,KDP,19.2,47.1,Keurig Dr Pepper Inc.
+5,axon-enterprise-inc,AXON,14.4,31.9,"Axon Enterprise, Inc."
+6,northern-trust,NTRS,16.4,30.3,Northern Trust Corporation
+7,mongodb-inc,MDB,14.2,29.5,"MongoDB, Inc."
+8,cincinnati-financial-corp,CINF,5.7,26.4,Cincinnati Financial Corporation
+9,f5-networks-inc,FFIV,5.4,25.9,"F5, Inc."
+10,tradeweb-markets-inc,TW,9.9,25.8,Tradeweb Markets Inc.
+11,lpl-financial-holding,LPLA,17.0,25.3,LPL Financial Holdings Inc.
+12,caseys-general-stores-inc,CASY,20.8,25.3,"Casey's General Stores, Inc."
+13,first-citizens-bancshares-inc,FCNCA,6.5,23.9,"First Citizens BancShares, Inc."
+14,roku-inc,ROKU,3.5,23.4,"Roku, Inc."
+15,entegris,ENTG,3.7,21.8,"Entegris, Inc."
+16,super-micro-computer-inc,SMCI,17.4,21.3,"Super Micro Computer, Inc."
+17,jb-hunt-transport-services-inc,JBHT,17.7,21.3,"J.B. Hunt Transport Services, Inc."
+18,macom-technology,MTSI,5.6,20.1,"MACOM Technology Solutions Holdings, Inc."
+19,sba-communications-corp,SBAC,34.3,19.2,SBA Communications Corporation
+20,woodward-inc,WWD,17.5,19.1,"Woodward, Inc."
+21,first-solar-inc,FSLR,14.5,18.7,"First Solar, Inc."
+22,nordson-corporation,NDSN,3.4,18.2,Nordson Corporation
+23,zebra-technologies-corp,ZBRA,17.8,18.2,Zebra Technologies Corporation
+24,news-corporation,NWS,22.9,18.0,News Corporation
+25,east-west-bancorp,EWBC,35.7,17.6,"East West Bancorp, Inc."
+26,viper-energy-partners-lp,VNOM,3.9,16.5,"Viper Energy, Inc."
+27,ch-robinson-worldwide-inc,CHRW,10.3,16.4,"C.H. Robinson Worldwide, Inc."
+28,exelixis-inc,EXEL,8.1,16.0,"Exelixis, Inc."
+29,lattice-semiconductor-corporation,LSCC,2.5,15.3,Lattice Semiconductor Corporation
+30,trimble-inc,TRMB,4.6,14.5,Trimble Inc.
+31,neurocrine-biosciences-inc,NBIX,8.4,14.4,"Neurocrine Biosciences, Inc."
+32,coca-cola-bottling-co-consolidated,COKE,33.1,14.2,"Coca-Cola Consolidated, Inc."
+33,lincoln-electric-holdings-inc,LECO,27.0,14.2,"Lincoln Electric Holdings, Inc."
+34,halozyme-therapeutics-inc,HALO,3.6,14.1,"Halozyme Therapeutics, Inc."
+35,manhattan-associates-inc,MANH,10.3,13.6,"Manhattan Associates, Inc."
+36,costar-group-inc,CSGP,2.3,13.4,"CoStar Group, Inc."
+37,ares-capital-corporation,ARCC,6.5,13.3,Ares Capital Corporation
+38,sei-investments-co,SEIC,20.5,12.9,SEI Investments Company
+39,erie-indemnity-co,ERIE,20.8,12.9,Erie Indemnity Company
+40,semtech-corp,SMTC,10.6,12.7,Semtech Corporation
+41,sterling-construction-co-inc,STRL,3.1,12.6,"Sterling Infrastructure, Inc."
+42,corcept-therapeutics,CORT,3.4,12.6,Corcept Therapeutics Incorporated
+43,five-below-inc,FIVE,47.8,12.3,"Five Below, Inc."
+44,gaming-and-leisure,GLPI,4.9,11.7,"Gaming and Leisure Properties, Inc."
+45,bio-techne,TECH,71.6,11.4,Bio-Techne Corporation
+46,repligen-corporation,RGEN,28.7,11.4,Repligen Corporation
+47,texas-roadhouse-inc,TXRH,27.0,11.1,"Texas Roadhouse, Inc."
+48,freedom-holding-corp,FRHC,2.6,11.0,Freedom Holdings Corp.
+49,biomarin-pharmaceutical-inc,BMRN,2.3,10.9,BioMarin Pharmaceutical Inc.
+50,jack-henry-associates-inc,JKHY,6.0,10.8,"Jack Henry & Associates, Inc."
+51,globalstar-inc,GSAT,12.2,10.8,"Globalstar, Inc."
+52,madrigal-pharmaceuticals-inc,MDGL,3.0,10.8,"Madrigal Pharmaceuticals, Inc."
+53,agnc-investment-corp,AGNC,6.0,10.4,AGNC Investment Corp.
+54,amkor-technology-inc,AMKR,3.2,10.4,"Amkor Technology, Inc."
+55,the-ensign-group-inc,ENSG,4.9,10.3,"The Ensign Group, Inc."
+56,umb-financial-corporation,UMBF,3.3,10.1,UMB Financial Corporation
+57,ttm-technologies-inc,TTMI,2.8,10.1,"TTM Technologies, Inc."
+58,rambus-inc,RMBS,2.7,10.0,Rambus Inc.
+59,wintrust-financial-corporation,WTFC,10.4,9.9,Wintrust Financial Corporation
+60,littelfuse-inc,LFUS,3.6,9.7,"Littelfuse, Inc."
+61,advanced-energy,AEIS,13.2,9.6,"Advanced Energy Industries, Inc."
+62,cognex-corporation,CGNX,20.6,9.6,Cognex Corporation
+63,henry-schein-inc,HSIC,10.6,9.4,"Henry Schein, Inc."
+64,zions-bancorporation,ZION,20.0,9.4,"Zions Bancorporation, National Association"
+65,vicor-corporation,VICR,2.1,9.4,Vicor Corporation
+66,first-cash-financial-services-inc,FCFS,5.4,9.3,"FirstCash Holdings, Inc."
+67,10x-genomics-inc,TXG,60.2,9.3,"10x Genomics, Inc."
+68,sanmina-sci-corp,SANM,2.3,9.1,Sanmina Corporation
+69,crinetics-pharmaceuticals-inc,CRNX,3.8,9.0,Crinetics Pharmaceuticals Inc
+70,tetra-tech-inc,TTEK,8.0,9.0,"Tetra Tech, Inc."
