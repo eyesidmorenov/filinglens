@@ -195,6 +195,19 @@ def test_system_prompt_states_product_rules(results: dict[str, SearchResult]) ->
         assert phrase in system
 
 
+def test_system_prompt_accepts_yahoo_finance_and_asks_for_each_figures_source(
+    results: dict[str, SearchResult],
+) -> None:
+    fake = FakeChatGenerator(tool_reply(sources=[{"doc_id": "D1", "excerpt": "foundries"}]))
+    make(fake).run("q", [results[NVDA]])
+    system = fake.system_prompt
+    assert 'section starts with "Yahoo Finance"' in system
+    assert "It is a valid source" in system
+    assert "Say where each figure comes from" in system
+    assert "Never present a Yahoo Finance figure as coming from the 10-K" in system
+    assert "retrieved from filings or Yahoo Finance" in system
+
+
 _REQUEST = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
 
 
