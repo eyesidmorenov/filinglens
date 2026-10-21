@@ -11,7 +11,7 @@ API_DIR = Path(__file__).resolve().parents[1]
 if str(API_DIR) not in sys.path:
     sys.path.insert(0, str(API_DIR))
 
-from app import catalog, company_year  # noqa: E402
+from app import catalog, company_year, yahoo  # noqa: E402
 
 FIXTURE = Path(__file__).with_name("fixtures") / "companies_25.csv"
 
@@ -32,3 +32,9 @@ def companies_from_fixture(monkeypatch):
     company_year._catalog.cache_clear()
     yield companies
     company_year._catalog.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def no_yahoo_snapshots(tmp_path, monkeypatch):
+    """The snapshots in data/yahoo on your computer don't change the tests: start with none."""
+    monkeypatch.setattr(yahoo, "YAHOO_DIR", tmp_path / "no-yahoo")

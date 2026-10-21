@@ -33,8 +33,11 @@ services:
       - EMBEDDING_MODEL=BAAI/bge-base-en-v1.5
       # La llave se lee del archivo .env de la raíz (nunca se sube a GitHub)
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # Snapshots de Yahoo Finance (años después de los 10-K): la API solo los lee, nunca llama a Yahoo
+      - YAHOO_DIR=/app/data/yahoo
     volumes:
       - hf_models:/root/.cache/huggingface   # reutiliza el modelo BGE ya descargado
+      - ./data/yahoo:/app/data/yahoo:ro      # creados por: docker compose --profile yahoo run --rm yahoo
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
