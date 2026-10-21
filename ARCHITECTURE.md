@@ -2,7 +2,7 @@
 
 FilingLens AI answers questions about NASDAQ companies from their 10-K filings, and every answer cites its source: company, fiscal year, section and page. This document is the map of the system: what each part does, how the parts talk to each other, where the data lives and how to run it. Update it whenever a part or a contract changes.
 
-*Last update: 2026-10-20 (`main` after PR #36).*
+*Last update: 2026-10-21 (`main` after PR #42).*
 
 ## 1. Project structure
 
@@ -18,37 +18,42 @@ filinglens/
 ├── tenk-answer/     Answer generation with Claude: cited answers, structured output, streaming
 ├── api/             FastAPI: detects company and year, runs search and generation
 ├── ui/              Chainlit chat: streaming answers, clickable citations
-├── yahoo-finance/   Yahoo Finance coverage check and snapshots (not in the chatbot yet)
+├── yahoo-finance/   Yahoo Finance snapshots for fiscal 2022 onwards (read by the api)
 ├── docker-compose.yml
 └── data/            PDFs, chunks, embeddings and reports (never committed)
 ```
 
 ## 2. System diagram
 
-Two flows run independently. **Indexing** runs once per batch of companies. **Answering** runs on every question.
+Two flows run independently. **Indexing** runs once per batch of companies (and the Yahoo Finance snapshots are fetched once per batch too). **Answering** runs on every question.
+
+For a presentation-ready version of the diagram, see [FilingLens AI · Architecture v2](https://claude.ai/artifact/Kabc9d7JoNcg4UjcsBsXu2).
 
 ```mermaid
-flowchart LR
-    subgraph Indexing["Indexing · once per batch"]
-        S3[(S3 bucket<br/>10-K PDFs)] --> ETL[etl<br/>text, sections, chunks]
-        ETL --> IDX[index<br/>BGE embeddings]
-        IDX --> ES[(Elasticsearch<br/>text + vectors)]
-    end
+flowchart TB
     subgraph Answering["Answering · every question"]
-        UI[ui<br/>Chainlit] -->|POST /ask/stream| API[api<br/>FastAPI]
-        API -->|company + year| SEARCH[search<br/>BM25 + vectors → RRF]
-        SEARCH --> ES
-        SEARCH -->|top 5 chunks| GEN[tenk-answer<br/>Claude]
-        GEN -->|answer + sources| API
-        API -->|streamed answer + citations| UI
+        UI["ui<br/>Chainlit chat"] -->|"1 · question"| API["api<br/>FastAPI"]
+        API -->|"2 · company + year 2019-2021"| SEARCH["search<br/>BM25 + vectors → RRF"]
+        SEARCH -->|"3 · top 5 chunks"| GEN["tenk-answer<br/>Claude"]
+        API -->|"2b · year 2022+: snapshot as one chunk"| GEN
     end
+    subgraph Indexing["Indexing · once per batch of companies"]
+        S3[("S3 bucket<br/>10-K PDFs")] --> ETL["etl<br/>text, sections, chunks"]
+        ETL --> IDX["index<br/>BGE embeddings"]
+        IDX --> ES[("Elasticsearch<br/>text + vectors")]
+        YJOB["yahoo-finance<br/>batch job"] --> SNAP[("Yahoo snapshots<br/>data/yahoo, JSON")]
+    end
+    SEARCH <-->|"filters + queries"| ES
+    API -.->|"reads"| SNAP
+    GEN -.->|"4 · answer + sources"| API
+    API -.->|"5 · streamed answer + citations"| UI
 ```
 
 The question flow, step by step:
 
 1. The user asks in the chat. The UI sends the question to `POST /ask/stream`.
-2. The API detects the company and the fiscal year. It reads the supported companies and years from the index, so adding companies needs no code change. If the company or the year is not in the index, it answers that it cannot, without calling Claude.
-3. Search filters by company and year, runs BM25 and vector search, and fuses both lists with reciprocal rank fusion (RRF). It returns the best 5 chunks.
+2. The API detects the company and the fiscal year. It reads the supported companies and years from the index, so adding companies needs no code change. If the company is unknown, or the year is neither in the index nor in the company's Yahoo snapshot, it says which years it can answer, without calling Claude.
+3. For a year in the index (2019 to 2021), search filters by company and year, runs BM25 and vector search, and fuses both lists with reciprocal rank fusion (RRF). It returns the best 5 chunks. For a later year (2022 onwards), the API skips search and turns the company's Yahoo Finance snapshot into one chunk (section "Yahoo Finance (fetched on <date>)", `page: 0`).
 4. tenk-answer sends the question and the chunks to Claude. Claude must answer only from those chunks, cite each claim with a `[n]` marker, say "I don't know" when the chunks do not answer, and refuse comparisons, calculations and investment advice.
 5. The API streams the answer to the chat. Each citation opens the exact text of the 10-K in a side panel.
 
@@ -62,9 +67,9 @@ The question flow, step by step:
 | search | Hybrid retrieval with exact company/year filters; evaluation with exact chunk labels | Haystack, Elasticsearch | José Luis |
 | search-index | Read-only health, stats and filters of the index | Python, Elasticsearch client | Luis |
 | tenk-answer | Build the context, call Claude with structured output, validate citations, stream tokens | Haystack, anthropic-haystack, Pydantic | Juan Carlos |
-| api | `/health`, `/ask`, `/ask/stream`; company and year detection; clear error messages; stops Claude when the user leaves | FastAPI | Kelyn |
-| ui | Chat with streaming, `[n]` citations, side panel opened on click | Chainlit | Kelyn |
-| yahoo-finance | Coverage check and snapshots of annual figures after 2021 | yfinance | Elkin, Lourdes |
+| api | `/health`, `/ask`, `/ask/stream`; company and year detection; 10-K search or Yahoo snapshot by year; clear error messages; stops Claude when the user leaves | FastAPI | Kelyn |
+| ui | Chat with streaming, `[n]` citations, side panel opened on click; Yahoo citations show the fetch date instead of a page | Chainlit | Kelyn |
+| yahoo-finance | Snapshots of annual figures for the companies in the index; each company's fiscal year rule is checked against its own 10-Ks | yfinance | Lourdes, Elkin |
 | Docker and architecture | One command to run every service | Docker Compose | Elkin |
 
 ## 4. Data contracts
@@ -78,6 +83,8 @@ Each part hands off to the next in a fixed shape. That is what let the team work
 | Contract 3 · search result | search → tenk-answer | `chunk_id`, `text`, `score`, `section`, `page`, `company`, `fiscal_year` |
 | Contract 4 · API response (locked) | api → ui | `answer`, `sources[]` (`company`, `fiscal_year`, `section`, `page`, `excerpt`), `latency_ms` |
 
+A Yahoo Finance snapshot travels as one Contract 3 chunk (`chunk_id` `yahoo-<TICKER>-<year>`, `page: 0`), so Contract 4 did not change.
+
 `chunk_id` depends on the page and the order of the chunk in it, so it changes when the ETL re-chunks a filing. The evaluation labels belong to one chunk package and are regenerated with `python -m src.labels` after each new package.
 
 ## 5. Data stores
@@ -85,7 +92,8 @@ Each part hands off to the next in a fixed shape. That is what let the team work
 | Store | Type | What it holds |
 | --- | --- | --- |
 | Elasticsearch, index `filinglens-chunks` | Search engine (8.15.3) | Chunks with text, BM25 terms and 768-dimension BGE vectors. Today: 50 companies, 150 filings, 50,785 chunks (package v5) |
-| `data/` | Local files, never committed | Raw PDFs, clean text, chunks, embedding cache, evaluation reports, Yahoo snapshots |
+| `data/` | Local files, never committed | Raw PDFs, clean text, chunks, embedding cache, evaluation reports |
+| `data/yahoo/snapshots/<TICKER>.json` | Local files, never committed; shared on Drive | Yahoo Finance figures per fiscal year, with the fetch date and the currency. They are the cache: the chat never calls Yahoo live. Mounted read-only in the api container |
 | Google Drive | Shared packages | Chunks + embeddings per version, so nobody has to recompute embeddings |
 | `search/evaluation/questions.json` | Committed | 150 questions with exact chunk labels; new companies append their questions to this file |
 
@@ -96,7 +104,7 @@ Each part hands off to the next in a fixed shape. That is what let the team work
 | Anthropic Claude (`claude-sonnet-5`) | Writes the cited answer; the only cost per question (≈ $0.012) | anthropic-haystack, key in `.env` |
 | AWS S3 (course bucket) | Source of the 10-K PDFs | boto3, read-only keys in `eda/.env` |
 | Hugging Face | Downloads the BGE model once (`BAAI/bge-base-en-v1.5`) | sentence-transformers, cached in a Docker volume |
-| Yahoo Finance | Annual figures after 2021 (planned for the chatbot) | yfinance; not an official API, so the chat will read saved snapshots, never live calls |
+| Yahoo Finance | Annual figures for fiscal 2022 onwards (free) | yfinance, run as a batch job; not an official API, so the chat reads the saved snapshots, never live calls |
 
 ## 7. Deployment and infrastructure
 
@@ -121,16 +129,16 @@ Every port is bound to 127.0.0.1, so nothing is exposed outside the machine.
 ## 9. Development and testing
 
 - Each part has its own unit tests, which run without Elasticsearch, the BGE model or a Claude key.
-- Current counts on `main`: api 49, tenk-answer 108, search 24, etl 95 (16 skipped).
+- Current counts on `main`: api 61, tenk-answer 108, search 25, yahoo-finance 24, etl 95 (16 skipped).
 - Work goes through pull requests: one branch per change, reviewed by the owner of the part it touches, merged only with an approval.
 - Search quality is measured with exact chunk labels: hybrid search finds the right chunk in the top 5 for 95% of the 150 questions (MRR 0.78, right section 99%).
 
 ## 10. Next steps
 
-- **Yahoo Finance in the chat:** questions about 2022 onwards answered from saved snapshots, cited as "Yahoo Finance · fetched on <date>". The design keeps Contract 4 unchanged (`page: 0` for Yahoo sources).
+- **Yahoo Finance in the prompt:** the answer prompt still speaks only of 10-K filings; it must also accept the Yahoo Finance source and say where each figure comes from.
 - **Answer cache:** cache Claude's answers (Redis) for repeated questions. Claude is the only cost per question; Yahoo is free.
 - **Answer quality:** evaluate faithfulness and answer relevancy with RAGAS.
-- **More companies:** 75, then 100, with an EDA pre-flight check of each new batch before it enters the ETL.
+- **More companies:** 100, chosen by market value, with an EDA pre-flight check of each new batch before it enters the ETL.
 - **CI:** run every part's tests on each pull request (GitHub Actions).
 
 ## 11. Glossary
