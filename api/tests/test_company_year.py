@@ -154,8 +154,8 @@ def test_clarification_rejects_an_explicit_unsupported_ticker():
             "I found more than one year; please ask about one fiscal year at a time.",
         ),
         (
-            "Apple revenue in 2022",
-            "That fiscal year is outside the supported range; please use 2019, 2020, or 2021.",
+            "Apple revenue in 2022",  # no Yahoo snapshot in the tests (conftest.py)
+            "I don't have fiscal 2022 for Apple Inc. I can answer about fiscal 2019 to 2021 from its 10-K filings.",
         ),
         ("Tesla revenue in 2021", "Please mention one of the 25 supported NASDAQ companies."),
     ],

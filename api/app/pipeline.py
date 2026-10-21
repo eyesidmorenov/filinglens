@@ -1,7 +1,9 @@
 """Answer pipeline: hybrid search (search/) + cited answer (tenk-answer).
 
 question + ticker + fiscal_year
-        -> search()   -> Contract 3 chunks  (José Luis's HybridRetriever)
+        -> retrieve() -> Contract 3 chunks:
+             a year in the index    -> search(), José Luis's HybridRetriever over the 10-Ks
+             a later year (2022+)   -> the Yahoo Finance snapshot as one chunk (yahoo.py)
         -> generate() -> Contract 4 answer  (Juan Carlos's AnswerGenerator)
 
 Both heavy pieces (BGE model, Claude client) are created once. warm_up() loads
@@ -21,8 +23,8 @@ from collections.abc import Iterator
 from functools import lru_cache
 from pathlib import Path
 
-from . import catalog
-from .company_year import analyze_company_year, clarification_message
+from . import catalog, yahoo
+from .company_year import analyze_company_year, clarification_message, supported_tickers
 
 # search/ is a folder of the repo, not an installed package. In Docker it is
 # copied to /app/search (see api/Dockerfile); locally it is <repo>/search.
@@ -127,12 +129,53 @@ def resolve_company_year(
     if ticker:
         ticker = ticker.strip().upper()
 
-    # A company or year that is not in the index: don't search, say what is missing.
-    if (ticker, fiscal_year) not in company_names():
-        message = clarification_message(match, ticker=ticker, fiscal_year=fiscal_year)
-        return None, None, message or MISSING_COMPANY_OR_YEAR
+    # A company and year in the index: the 10-Ks answer
+    if (ticker, fiscal_year) in company_names():
+        return ticker, fiscal_year, None
 
-    return ticker, fiscal_year, None
+    # One of our companies, a year after the 10-Ks: Yahoo Finance answers if its snapshot has that year
+    if ticker in supported_tickers() and fiscal_year is not None:
+        if fiscal_year in yahoo.years(ticker):
+            return ticker, fiscal_year, None
+        return None, None, missing_year_message(ticker, fiscal_year)
+
+    # A company or year we can't identify: don't search, say what is missing
+    message = clarification_message(match, ticker=ticker, fiscal_year=fiscal_year)
+    return None, None, message or MISSING_COMPANY_OR_YEAR
+
+
+def company_name(ticker: str) -> str:
+    """The latest official name of a company: FB -> "Meta Platforms, Inc."."""
+    names = {year: name for (t, year), name in company_names().items() if t == ticker}
+    return names[max(names)] if names else ticker
+
+
+def _years_text(years: list[int]) -> str:
+    """[2019, 2020, 2021] -> "2019 to 2021"; [2019, 2021] -> "2019 and 2021"."""
+    if len(years) > 2 and years == list(range(years[0], years[-1] + 1)):
+        return f"{years[0]} to {years[-1]}"
+    words = [str(y) for y in years]
+    return " and ".join(words) if len(words) <= 2 else ", ".join(words[:-1]) + " and " + words[-1]
+
+
+def missing_year_message(ticker: str, fiscal_year: int) -> str:
+    """One of our companies, a year we have no data for: say which years we do have."""
+    filings = sorted(year for (t, year) in company_names() if t == ticker)
+    name = company_name(ticker)
+    message = f"I don't have fiscal {fiscal_year} for {name}" + ("" if name.endswith(".") else ".")
+    if filings:
+        message += f" I can answer about fiscal {_years_text(filings)} from its 10-K filings"
+        later = [y for y in yahoo.years(ticker) if y not in filings]
+        message += f", and fiscal {_years_text(later)} from Yahoo Finance." if later else "."
+    return message
+
+
+def retrieve(question: str, ticker: str, fiscal_year: int) -> list[dict]:
+    """The chunks for tenk-answer: 10-K search for a year in the index, else the Yahoo snapshot."""
+    if (ticker, fiscal_year) in company_names():
+        return search(question, ticker, fiscal_year)
+    snapshot_chunk = yahoo.chunk(ticker, fiscal_year, company_name(ticker))
+    return [snapshot_chunk] if snapshot_chunk else []
 
 
 def answer_question(question: str, ticker: str | None = None, fiscal_year: int | None = None) -> dict:
@@ -140,7 +183,7 @@ def answer_question(question: str, ticker: str | None = None, fiscal_year: int |
     if message:
         return {"answer": message, "sources": [], "latency_ms": 0}
 
-    hits = search(question, ticker, fiscal_year)
+    hits = retrieve(question, ticker, fiscal_year)
     return generate(question, hits)
 
 
@@ -174,7 +217,7 @@ def answer_question_stream(
         if message:
             yield {"type": "final", "answer": message, "sources": [], "latency_ms": 0}
             return
-        hits = search(question, ticker, fiscal_year)
+        hits = retrieve(question, ticker, fiscal_year)
     except Exception:
         logger.exception("Search failed")
         yield {"type": "error", "message": ANSWER_ERROR}

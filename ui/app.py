@@ -16,6 +16,10 @@ def source_label(i: int, s: dict) -> str:
     if not section or section == "Unknown":
         section = "No section"
     name = s.get("ticker") or s["company"]
+    # Page 0 = Yahoo Finance snapshot (years after the 10-Ks): there is no page, show the fetch date
+    if s.get("page") == 0 and section.startswith("Yahoo Finance"):
+        fetched = section.partition("fetched on ")[2].rstrip(")") or "unknown date"
+        return f"{i}. {name} {s['fiscal_year']} · Yahoo Finance · fetched on {fetched}"
     return f"{i}. {name} {s['fiscal_year']} · {section} · p. {s['page']}"
 
 
