@@ -1333,7 +1333,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=1.9.0" },
+    { name = "anthropic", specifier = ">=1.9.0,<2" },
     { name = "anthropic-haystack", specifier = ">=6.2.0" },
     { name = "haystack-ai", specifier = ">=3.3.0" },
     { name = "pydantic", specifier = ">=2.13.5" },
