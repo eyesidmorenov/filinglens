@@ -47,6 +47,33 @@ def company_name_words(company_name: str) -> list[str]:
     return name
 
 
+def _names_the_company(match: re.Match, name_size: int) -> bool:
+    """Whether a match of the company's name is the company, not an ordinary word.
+
+    The full name always is ("United Airlines", "Dollar Tree's"). A shorter match, only the
+    first words, is the company when it is written with a capital and is not part of another
+    name: "Cadence's" is, but "United States", "Western Europe", "North American" and
+    "the US dollar" are not.
+    """
+    found = match.group(0)
+    if len(found.rstrip("'s").split()) >= name_size:
+        return True
+    if not found[0].isupper():
+        return False
+    text = match.string
+    after = text[match.end():].lstrip()
+    before = text[: match.start()].rstrip()
+    next_word_is_a_name = bool(after) and after[0].isupper()
+    # A capital that only starts the sentence ("What Cadence reported") is not part of a name
+    previous = before.split()
+    starts_sentence = len(previous) < 2 or previous[-2].endswith((".", "?", "!", ":"))
+    previous_word_is_a_name = (
+        bool(previous) and previous[-1][0].isupper() and not previous[-1].endswith((".", "?", "!", ":"))
+        and not starts_sentence
+    )
+    return not next_word_is_a_name and not previous_word_is_a_name
+
+
 def keyword_query(question: str, ticker: str, company_name: str | None) -> str:
     """The question for BM25 without the company and the year.
 
@@ -58,12 +85,13 @@ def keyword_query(question: str, ticker: str, company_name: str | None) -> str:
     query = question.replace("’", "'")
     words = company_name_words(company_name or "")
     if words:
-        # "Cadence Design Systems'" or just "Cadence": the name's first word and the ones that follow it
+        # "Cadence Design Systems'" or just "Cadence": the name's first word and the ones that follow it.
+        # The name ends at a word boundary: "dollars" is not Dollar Tree.
         pattern = ""
         for word in reversed(words[1:]):
             pattern = rf"(?:\s+{re.escape(word)}{pattern})?"
-        name = re.compile(rf"\b{re.escape(words[0])}{pattern}(?:'s\b|')?", re.IGNORECASE)
-        query = name.sub(" ", query)
+        name = re.compile(rf"\b{re.escape(words[0])}{pattern}(?:'s\b|'(?!\w)|\b)", re.IGNORECASE)
+        query = name.sub(lambda m: " " if _names_the_company(m, len(words)) else m.group(0), query)
     # Case-sensitive: the ticker FAST is a company, "fast" is a word
     query = re.sub(rf"\b{re.escape(ticker.upper())}\b", " ", query)
     query = YEAR_MENTION.sub(" ", query)

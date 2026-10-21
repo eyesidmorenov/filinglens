@@ -132,3 +132,21 @@ def test_company_name_words_stop_at_the_legal_ending():
     assert company_name_words("The Kraft Heinz Company") == ["kraft", "heinz"]
     assert company_name_words("Seagate Technology Holdings public limited company") == ["seagate", "technology"]
     assert company_name_words("O'Reilly Automotive, Inc.") == ["o'reilly", "automotive"]
+
+
+def test_keyword_query_removes_the_company_but_not_ordinary_words_it_starts_with():
+    # Found in review of #36: "United States", "dollars" and "Western Europe" lost a word
+    assert keyword_query(
+        "How much revenue did United Airlines earn in the United States in 2021?", "UAL", "United Airlines Holdings, Inc."
+    ) == "How much revenue did earn in the United States ?"
+    assert keyword_query(
+        "What risks did Dollar Tree mention about the US dollars in fiscal 2020?", "DLTR", "Dollar Tree, Inc."
+    ) == "What risks did mention about the US dollars ?"
+    assert keyword_query(
+        "What did Western Digital say about Western Europe in 2020?", "WDC", "Western Digital Corporation"
+    ) == "What did say about Western Europe ?"
+    assert keyword_query(
+        "How did North American revenue change for American Airlines in 2019?", "AAL", "American Airlines Group Inc."
+    ) == "How did North American revenue change for ?"
+    # A short name with a capital still counts as the company
+    assert keyword_query("What did Cadence report in 2021?", "CDNS", "Cadence Design Systems, Inc.") == "What did report ?"
