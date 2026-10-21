@@ -23,11 +23,17 @@ JSON file per company that the API reads when a question asks about fiscal 2022 
 
 ## What it does
 
-For each company in [`tickers.csv`](tickers.csv) it reads, through the `yfinance` library:
+For each company **in the index** it reads, through the `yfinance` library:
 
 - the annual **income statement**: Total Revenue, Gross Profit, Operating Income, Net Income
 - the annual **balance sheet**: Total Assets, Total Debt, Stockholders Equity
 - the annual **cash flow statement**: Operating Cash Flow, Free Cash Flow
+
+**The list of companies scales on its own.** It comes from the ETL output in `data/chunks/`:
+`_stats.csv` (one row per 10-K, with its fiscal year and the date it ended) and the first chunk
+of each filing (S3 folder and official name). Adding companies to the index adds them here,
+with no file to edit. [`overrides.csv`](overrides.csv) only holds the exceptions: a different
+Yahoo ticker (FB is META) and notes on acquired companies.
 
 and writes, in `data/` (never committed):
 
@@ -47,15 +53,16 @@ Yahoo labels each year with the date it ended, and companies name their fiscal y
 differently. The snapshot uses the same fiscal year as the company's 10-K, so "Dollar Tree
 2023" means the same in Yahoo and in the index:
 
-| Rule (`fiscal_year_rule` in `tickers.csv`) | The fiscal year is | Example |
+| Rule (`fiscal_year_rule`) | The fiscal year is | Example |
 | --- | --- | --- |
 | `end_year` (47 companies) | the calendar year of the end date | NVIDIA: ended 2021-01-31 → fiscal 2021 |
 | `most_months` (Cadence, Dollar Tree, Illumina) | the calendar year where most of the year falls | Dollar Tree: ended 2020-02-01 → fiscal 2019 |
 
-The rules were checked against the 150 10-Ks in the index: `--check-fiscal-years` compares
-each company's rule with the fiscal year and end date of its filings (`data/chunks/_stats.csv`)
-and lists any company that does not match. When companies are added, add them to
-`tickers.csv` and run it before the coverage check.
+**Each company's rule is chosen from its own 10-Ks**: the plain rule (`end_year`) if it gives
+the fiscal year of every filing, else `most_months`. A company whose 10-Ks fit neither is left
+out and reported, so the API answers "I don't have that year" instead of showing another
+year's figures. `--check-fiscal-years` lists the rules chosen, without calling Yahoo: today
+47 companies use `end_year` and 3 use `most_months`.
 
 Yahoo moves period ends to the end of the month (Apple shows 2025-09-30 for September 27), so
 the dates in `fiscal_year_end` are approximate. The fiscal year is not: both rules give the same

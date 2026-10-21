@@ -24,11 +24,17 @@ fiscal 2022 o posterior.
 
 ## Qué hace
 
-Para cada empresa de [`tickers.csv`](tickers.csv) lee, con la librería `yfinance`:
+Para cada empresa **del índice** lee, con la librería `yfinance`:
 
 - el **estado de resultados** anual: Total Revenue, Gross Profit, Operating Income, Net Income
 - el **balance general** anual: Total Assets, Total Debt, Stockholders Equity
 - el **flujo de caja** anual: Operating Cash Flow, Free Cash Flow
+
+**La lista de empresas escala sola.** Sale de lo que deja el ETL en `data/chunks/`: `_stats.csv`
+(una fila por 10-K, con su año fiscal y la fecha en que cerró) y el primer chunk de cada informe
+(carpeta de S3 y nombre oficial). Sumar empresas al índice las suma acá, sin editar ningún
+archivo. [`overrides.csv`](overrides.csv) guarda solo las excepciones: un ticker distinto en
+Yahoo (FB es META) y notas sobre las empresas compradas.
 
 y escribe en `data/` (nunca se sube al repositorio):
 
@@ -48,15 +54,16 @@ Yahoo identifica cada año por la fecha en que cerró, y cada empresa nombra su 
 manera. La foto usa el mismo año fiscal que el 10-K de la empresa, así "Dollar Tree 2023"
 significa lo mismo en Yahoo y en el índice:
 
-| Regla (`fiscal_year_rule` en `tickers.csv`) | El año fiscal es | Ejemplo |
+| Regla (`fiscal_year_rule`) | El año fiscal es | Ejemplo |
 | --- | --- | --- |
 | `end_year` (47 empresas) | el año calendario de la fecha de cierre | NVIDIA: cerró el 31/01/2021 → año fiscal 2021 |
 | `most_months` (Cadence, Dollar Tree, Illumina) | el año calendario donde cae la mayor parte del año | Dollar Tree: cerró el 01/02/2020 → año fiscal 2019 |
 
-Las reglas se verificaron con los 150 10-K del índice: `--check-fiscal-years` compara la regla
-de cada empresa con el año fiscal y la fecha de cierre de sus informes (`data/chunks/_stats.csv`)
-y lista las empresas que no coinciden. Cuando se sumen empresas, agregarlas a `tickers.csv` y
-correrlo antes del chequeo de cobertura.
+**La regla de cada empresa se elige con sus propios 10-K**: la regla simple (`end_year`) si da
+el año fiscal de todos sus informes; si no, `most_months`. Una empresa cuyos 10-K no encajan
+con ninguna queda afuera y se informa, así la API responde "no tengo ese año" en vez de
+mostrar cifras de otro año. `--check-fiscal-years` lista las reglas elegidas, sin llamar a
+Yahoo: hoy 47 empresas usan `end_year` y 3 usan `most_months`.
 
 Yahoo corre la fecha de cierre al fin de mes (Apple muestra 2025-09-30 por el 27 de septiembre),
 así que las fechas de `fiscal_year_end` son aproximadas. El año fiscal no: las dos reglas dan el
