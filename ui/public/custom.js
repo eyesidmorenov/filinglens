@@ -163,3 +163,35 @@
 
   new MutationObserver(closeIfNotClicked).observe(document.body, { childList: true, subtree: true, characterData: true });
 })();
+
+// Suggested questions (backlog #4): each one on its own line under the answer, like ChatGPT.
+// Chainlit puts them in the same row as the copy icon, so the first one sat next to it.
+// They are found by their icon (cl.Action icon="message-circle-question" in app.py), not by
+// Chainlit's internal classes. Styles live here, like the header buttons, so a cached
+// custom.css can't break them.
+(function () {
+  const SUGGESTION = 'svg[class*="message-circle-question"]';
+  const STYLE = `
+    div:has(> button > ${SUGGESTION}) {
+      flex-direction: column; align-items: stretch; width: 100%;
+    }
+    div:has(> button > ${SUGGESTION}) > button:not(:has(> ${SUGGESTION})) {
+      align-self: flex-start;  /* the copy icon stays alone, on the left */
+    }
+    button:has(> ${SUGGESTION}) {
+      justify-content: flex-start; height: auto; min-height: 40px; padding: 8px 4px;
+      border-radius: 0; border-top: 1px solid hsl(var(--border, 240 4% 30%));
+      white-space: normal; text-align: left;
+    }
+    button:has(> ${SUGGESTION}):hover { background: transparent; color: hsl(var(--foreground, 0 0% 98%)); }
+  `;
+  function addStyle() {
+    if (document.getElementById("fl-suggestions-style") || !document.head) return;
+    const style = document.createElement("style");
+    style.id = "fl-suggestions-style";
+    style.textContent = STYLE;
+    document.head.appendChild(style);
+  }
+  addStyle();
+  document.addEventListener("DOMContentLoaded", addStyle);
+})();
