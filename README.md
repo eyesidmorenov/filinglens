@@ -122,6 +122,7 @@ filinglens/
 ├── search/         Retrieval pipeline and evaluation
 ├── search-index/   Read-only index health, stats and filters
 ├── yahoo-finance/  Yahoo Finance coverage and snapshots (fiscal 2022 onwards; read by the API)
+├── answer-eval/    RAGAS evaluation of the answers (faithfulness, answer relevancy, context precision)
 ├── generation/     Prompt and Claude integration
 ├── api/            FastAPI
 ├── ui/             Chainlit

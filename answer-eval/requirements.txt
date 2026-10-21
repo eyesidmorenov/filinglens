@@ -1,0 +1,9 @@
+# Step 2 only (score.py). Step 1 runs in the API image with the API's own libraries.
+# CPU-only PyTorch for the BGE embeddings, as in api/ and search/
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.*
+sentence-transformers==6.1.0
+ragas==0.2.15
+langchain-anthropic==0.3.22
+langchain-huggingface==0.3.1
+pytest==8.4.2
