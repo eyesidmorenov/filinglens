@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -49,10 +49,13 @@ class Suggestions(BaseModel):
     suggestions: list[str]
 
 @app.get("/suggestions", response_model=Suggestions)
-def suggestions(question: str):
-    """2-3 follow-up questions about the same company, from templates (no Claude). Not part of Contract 4."""
+def suggestions(question: str, asked: list[str] = Query(default=[])):
+    """2-3 follow-up questions about the same company, from templates (no Claude). Not part of Contract 4.
+
+    `asked` (repeatable) = questions already asked in the conversation, so they aren't suggested again.
+    """
     try:
-        return Suggestions(suggestions=suggest(question))
+        return Suggestions(suggestions=suggest(question, asked))
     except Exception:
         # Suggestions are an extra: if something fails, the chat just shows none
         logger.exception("/suggestions failed")

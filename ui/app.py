@@ -72,11 +72,16 @@ async def on_chat_end():
         task.cancel()
 
 
-async def suggestion_buttons(question: str) -> list[cl.Action]:
-    """2-3 follow-up questions from the API (templates, no Claude), as buttons under the answer."""
+async def suggestion_buttons(question: str, asked: list[str]) -> list[cl.Action]:
+    """2-3 follow-up questions from the API (templates, no Claude), as buttons under the answer.
+
+    `asked` = the questions of this conversation, so the API doesn't suggest them again.
+    """
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(5)) as client:
-            response = await client.get(f"{API_URL}/suggestions", params={"question": question})
+            response = await client.get(
+                f"{API_URL}/suggestions", params={"question": question, "asked": asked}
+            )
             response.raise_for_status()
             suggestions = response.json().get("suggestions", [])
     except (httpx.HTTPError, ValueError):
@@ -102,6 +107,9 @@ async def main(message: cl.Message):
 
 async def answer(question: str):
     cl.user_session.set("answer_task", asyncio.current_task())
+    # The questions of this conversation (a new chat starts a new session, so the list starts empty)
+    asked = cl.user_session.get("asked") or []
+    cl.user_session.set("asked", asked + [question])
     # Only the latest answer keeps its suggestions
     previous = cl.user_session.get("suggestions_message")
     if previous:
@@ -147,7 +155,7 @@ async def answer(question: str):
     msg.content, msg.elements = format_answer(final)
     # Suggestions only under a real answer (with sources), not under "which company?" messages
     if final.get("sources"):
-        msg.actions = await suggestion_buttons(question)
+        msg.actions = await suggestion_buttons(question, asked)
         if msg.actions:
             cl.user_session.set("suggestions_message", msg)
     await msg.send()

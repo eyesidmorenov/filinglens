@@ -34,12 +34,17 @@ def test_without_yahoo_only_10k_years():
     assert suggestions.suggest("What were Apple's main risk factors in fiscal 2020?") == [
         "What was the total revenue of Apple Inc. in fiscal 2020?",
         "What were the main risk factors for Apple Inc. in fiscal 2019?",
+        "What was the net income of Apple Inc. in fiscal 2020?",  # fills up to 3
     ]
 
 
 def test_first_10k_year_has_no_year_before():
     found = suggestions.suggest("What were Apple's main risk factors in fiscal 2019?")
-    assert found == ["What was the total revenue of Apple Inc. in fiscal 2019?"]
+    assert found == [
+        "What was the total revenue of Apple Inc. in fiscal 2019?",
+        "What was the net income of Apple Inc. in fiscal 2019?",
+        "How did Apple Inc. describe its business in fiscal 2019?",
+    ]
 
 
 def test_a_yahoo_year_only_suggests_yahoo_figures(apple_snapshot):
@@ -53,6 +58,7 @@ def test_unknown_topic_still_suggests_the_same_company(apple_snapshot):
     assert found == [
         "What was the total revenue of Apple Inc. in fiscal 2021?",
         "What was the total revenue of Apple Inc. in fiscal 2024?",
+        "What were the main risk factors for Apple Inc. in fiscal 2021?",
     ]
 
 
@@ -90,3 +96,34 @@ def test_a_yahoo_year_suggests_other_figures_it_has(tmp_path, monkeypatch):
         "What was the net income of Apple Inc. in fiscal 2024?",
         "What was the total revenue of Apple Inc. in fiscal 2023?",
     ]
+
+
+def test_questions_already_asked_are_not_suggested_again(apple_snapshot):
+    # The user asked about revenue in 2021 with their own words, then clicked "risk factors 2021"
+    found = suggestions.suggest(
+        "What were the main risk factors for Apple Inc. in fiscal 2021?",
+        asked=["What was Apple's total revenue in fiscal 2021?"],
+    )
+    assert "What was the total revenue of Apple Inc. in fiscal 2021?" not in found
+    assert found == [
+        "What was the net income of Apple Inc. in fiscal 2021?",  # instead of revenue 2021, already asked
+        "What were the main risk factors for Apple Inc. in fiscal 2020?",
+        "What was the total revenue of Apple Inc. in fiscal 2024?",
+    ]
+
+
+def test_the_question_itself_is_never_suggested(apple_snapshot):
+    for question in ("Apple revenue 2021", "Apple risk factors 2020", "Apple net income 2021"):
+        assert all(suggestions._key(text) != suggestions._key(question)
+                   for text in suggestions.suggest(question))
+
+
+def test_endpoint_takes_the_asked_questions(apple_snapshot):
+    response = TestClient(main.app).get("/suggestions", params={
+        "question": "What were the main risk factors for Apple Inc. in fiscal 2021?",
+        "asked": ["What was Apple's total revenue in fiscal 2021?", "Apple net income 2021"],
+    })
+    found = response.json()["suggestions"]
+    assert "What was the total revenue of Apple Inc. in fiscal 2021?" not in found
+    assert "What was the net income of Apple Inc. in fiscal 2021?" not in found
+    assert len(found) == 3

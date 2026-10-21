@@ -63,31 +63,50 @@ def _answerable(topic: Topic, ticker: str, year: int) -> bool:
     return bool(snapshot) and topic.yahoo_figure in yahoo.figures(snapshot, year)
 
 
-def suggest(question: str) -> list[str]:
-    """Up to 3 questions about the same company, or [] when the question had no company and year."""
+def _key(question: str) -> tuple[str, int, str] | None:
+    """What a question asks about: (ticker, fiscal year, topic), or None when we can't tell."""
+    ticker, year, message = pipeline.resolve_company_year(question)
+    topic = current_topic(question)
+    if message or topic is None:
+        return None
+    return ticker, year, topic.name
+
+
+def suggest(question: str, asked: list[str] | tuple[str, ...] = ()) -> list[str]:
+    """Up to 3 questions about the same company, or [] when the question had no company and year.
+
+    `asked` = the questions already asked in this conversation: nothing about the same
+    company, year and topic is suggested again, even if it was written differently.
+    """
     ticker, year, message = pipeline.resolve_company_year(question)
     if message:
         return []
 
     name = pipeline.company_name(ticker)
     topic = current_topic(question)
-    picks: list[tuple[Topic, int]] = []
+    done = {key for q in (question, *asked) if (key := _key(q))}
 
-    # 1. Another topic, same year
-    other = next((t for t in TOPICS if t != topic and _answerable(t, ticker, year)), None)
-    if other:
-        picks.append((other, year))
-
+    # 1. Another topic, same year (all of them: the first ones may have been asked already)
+    other_topics = [(t, year) for t in TOPICS if t != topic]
     # 2. The same topic, the year before
-    if topic and _answerable(topic, ticker, year - 1):
-        picks.append((topic, year - 1))
-
+    year_before = [(topic, year - 1)] if topic else []
     # 3. The latest Yahoo year, when the question was about a 10-K year
     later = [y for y in yahoo.years(ticker) if not _in_index(ticker, y)]
+    yahoo_year = []
     if _in_index(ticker, year) and later:
         figure = topic if topic and _answerable(topic, ticker, later[-1]) else TOPICS[0]
-        if _answerable(figure, ticker, later[-1]):
-            picks.append((figure, later[-1]))
+        yahoo_year = [(figure, later[-1])]
+
+    def usable(t: Topic, y: int) -> bool:
+        return (ticker, y, t.name) not in done and _answerable(t, ticker, y)
+
+    # One of each kind first (the first usable one), then more topics of the same year to fill up to 3
+    picks = []
+    for group in (other_topics, year_before, yahoo_year):
+        pick = next(((t, y) for t, y in group if usable(t, y)), None)
+        if pick:
+            picks.append(pick)
+    picks += [(t, y) for t, y in other_topics if (t, y) not in picks and usable(t, y)]
 
     suggestions = []
     for t, y in picks:
@@ -95,4 +114,6 @@ def suggest(question: str) -> list[str]:
         # Safety net: every suggestion must be a question the API can answer
         if text not in suggestions and not pipeline.resolve_company_year(text)[2]:
             suggestions.append(text)
-    return suggestions[:MAX_SUGGESTIONS]
+        if len(suggestions) == MAX_SUGGESTIONS:
+            break
+    return suggestions
