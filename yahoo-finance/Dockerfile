@@ -1,5 +1,5 @@
-# FilingLens Yahoo Finance coverage check (research spike)
-# A run-once container: it asks Yahoo Finance about the 25 companies and exits.
+# FilingLens Yahoo Finance coverage check and snapshots
+# A run-once container: it asks Yahoo Finance about the companies of the index and exits.
 FROM python:3.12-slim
 
 WORKDIR /app
