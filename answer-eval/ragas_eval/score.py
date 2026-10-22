@@ -1,9 +1,15 @@
 """
 Step 2 of 2: score the answers of step 1 with RAGAS.
 
-    faithfulness        every claim in the answer is supported by the chunks Claude was given (0 to 1)
-    answer_relevancy    the answer addresses the question that was asked (0 to 1)
-    context_precision   the chunks given to Claude are useful for the answer, best ones first (0 to 1)
+    context_recall       the chunks given to Claude hold everything the reference answer needs (search)
+    context_precision    the useful chunks come first (search)
+    faithfulness         every claim in the answer is supported by those chunks: no hallucination
+    answer_relevancy     the answer addresses the question that was asked
+    factual_correctness  the answer agrees with the reference answer
+
+All from 0 to 1. The questions RAGAS wrote in step 0 have a reference answer, so they get the five
+metrics of Mariano's script. The labeled questions have none: they get the three that don't need
+it (faithfulness, answer_relevancy and context_precision without a reference).
 
 The judge is Claude (claude-sonnet-5 unless RAGAS_MODEL or --model says otherwise) and the
 embeddings for answer_relevancy are the BGE model the index already uses, so no OpenAI key is
@@ -36,12 +42,26 @@ from typing import Any
 
 from .common import latest_run
 
-METRICS = ("faithfulness", "answer_relevancy", "context_precision")
-RAGAS_NAMES = {
-    "faithfulness": "faithfulness",
-    "answer_relevancy": "answer_relevancy",
-    "llm_context_precision_without_reference": "context_precision",
-}
+METRICS_WITHOUT_REFERENCE = ("faithfulness", "answer_relevancy", "context_precision")
+METRICS_WITH_REFERENCE = ("context_recall", "context_precision", "faithfulness", "answer_relevancy",
+                          "factual_correctness")
+METRICS = METRICS_WITH_REFERENCE  # every metric a run can have, in the order they are shown
+
+
+def metric_columns(scored: list[dict[str, Any]]) -> tuple[str, ...]:
+    """The metrics of a run: the five with reference answers, else the three without."""
+    with_reference = any(r.get(m) is not None for r in scored for m in ("context_recall", "factual_correctness"))
+    return METRICS_WITH_REFERENCE if with_reference else METRICS_WITHOUT_REFERENCE
+
+
+def our_name(ragas_column: str) -> str | None:
+    """RAGAS result column -> our metric name: "factual_correctness(mode=f1)" -> "factual_correctness"."""
+    if ragas_column.startswith("llm_context_precision"):
+        return "context_precision"
+    for name in METRICS:
+        if ragas_column == name or ragas_column.startswith(name + "("):
+            return name
+    return None
 
 
 def load_answers(path: Path) -> list[dict[str, Any]]:
@@ -69,26 +89,48 @@ def judge(model: str):
 
 
 def ragas_scores(records: list[dict[str, Any]], model: str) -> list[dict[str, float | None]]:
-    """The three scores for each record, in the same order."""
+    """The scores of each record, in the same order: five with reference answers, three without."""
     from ragas import EvaluationDataset, RunConfig, evaluate
-    from ragas.metrics import Faithfulness, LLMContextPrecisionWithoutReference, ResponseRelevancy
+    from ragas.metrics import (
+        FactualCorrectness,
+        Faithfulness,
+        LLMContextPrecisionWithoutReference,
+        LLMContextPrecisionWithReference,
+        LLMContextRecall,
+        ResponseRelevancy,
+    )
 
     llm, embeddings = judge(model)
-    dataset = EvaluationDataset.from_list(
-        [{"user_input": r["question"], "response": r["answer"], "retrieved_contexts": r["contexts"]} for r in records]
-    )
-    result = evaluate(
-        dataset,
-        metrics=[
+    with_reference = all(r.get("reference") for r in records)
+    rows = []
+    for r in records:
+        row = {"user_input": r["question"], "response": r["answer"], "retrieved_contexts": r["contexts"]}
+        if with_reference:
+            row["reference"] = r["reference"]
+        rows.append(row)
+    if with_reference:
+        metrics = [
+            LLMContextRecall(llm=llm),
+            LLMContextPrecisionWithReference(llm=llm),
+            Faithfulness(llm=llm),
+            ResponseRelevancy(llm=llm, embeddings=embeddings),
+            FactualCorrectness(llm=llm),
+        ]
+    else:
+        metrics = [
             Faithfulness(llm=llm),
             ResponseRelevancy(llm=llm, embeddings=embeddings),
             LLMContextPrecisionWithoutReference(llm=llm),
-        ],
+        ]
+    result = evaluate(
+        EvaluationDataset.from_list(rows),
+        metrics=metrics,
         run_config=RunConfig(max_workers=4, timeout=180),
         show_progress=True,
     )
     frame = result.to_pandas()
-    return [{ours: clean(row.get(theirs)) for theirs, ours in RAGAS_NAMES.items()} for _, row in frame.iterrows()]
+    columns = {c: our_name(c) for c in frame.columns if our_name(c)}
+    return [{ours: clean(row.get(theirs)) for theirs, ours in columns.items()} for _, row in frame.iterrows()]
 
 
 def clean(value: Any) -> float | None:
@@ -101,9 +143,11 @@ def clean(value: Any) -> float | None:
 
 def summarize(records: list[dict[str, Any]], scored: list[dict[str, Any]]) -> dict[str, Any]:
     """Averages over the scored answers, by category, and every question's status."""
+    present = metric_columns(scored)
+
     def averages(rows: list[dict[str, Any]]) -> dict[str, float | None]:
         out = {}
-        for metric in METRICS:
+        for metric in present:
             values = [r[metric] for r in rows if r.get(metric) is not None]
             out[metric] = round(mean(values), 3) if values else None
         return out
@@ -132,7 +176,8 @@ def summarize(records: list[dict[str, Any]], scored: list[dict[str, Any]]) -> di
 
 def write_outputs(run: Path, scored: list[dict[str, Any]], summary: dict[str, Any]) -> None:
     with open(run / "scores.csv", "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["id", "category", *METRICS, "question"])
+        present = metric_columns(scored)
+        writer = csv.DictWriter(f, fieldnames=["id", "category", *present, "question"])
         writer.writeheader()
         for row in scored:
             writer.writerow({k: row.get(k) for k in writer.fieldnames})
@@ -142,12 +187,13 @@ def write_outputs(run: Path, scored: list[dict[str, Any]], summary: dict[str, An
 
 def print_summary(summary: dict[str, Any]) -> None:
     print(f"\n{summary['scored']} of {summary['questions']} questions scored; status: {summary['status']}")
-    for metric in METRICS:
+    present = list(summary["average"])
+    for metric in present:
         value = summary["average"].get(metric)
-        print(f"  {metric:<18} {value if value is not None else 'n/a'}")
+        print(f"  {metric:<20} {value if value is not None else 'n/a'}")
     print("\nBy category:")
     for category, row in summary["by_category"].items():
-        values = "  ".join(f"{m} {row[m] if row[m] is not None else 'n/a'}" for m in METRICS)
+        values = "  ".join(f"{m} {row[m] if row[m] is not None else 'n/a'}" for m in present)
         print(f"  {category:<22} n={row['n']:<3} {values}")
 
 
