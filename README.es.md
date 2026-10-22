@@ -123,7 +123,7 @@ filinglens/
 ├── search-index/   Estado, conteos y filtros del índice (solo lectura)
 ├── yahoo-finance/  Cobertura y fotos de Yahoo Finance (año fiscal 2022 en adelante; las lee la API)
 ├── answer-eval/    Evaluación RAGAS de las respuestas (preguntas escritas por RAGAS, cinco métricas)
-├── generation/     Prompt y conexión con Claude
+├── tenk-answer/    Prompt y conexión con Claude (respuestas con citas)
 ├── api/            FastAPI
 ├── ui/             Chainlit
 └── data/           Documentos y resultados intermedios (no se sube)
@@ -204,10 +204,7 @@ Desde la raíz del repositorio, con Docker abierto:
 
 Cada paquete de arriba sale de scripts de este repositorio:
 
-1. **Elegir las empresas** (`eda/`). La regla: empresas del NASDAQ con los tres años fiscales del alcance (2019, 2020 y 2021) en el bucket del curso.
-   - Las primeras 50 salen del Nasdaq-100 de 2019 a 2021, primero las más conocidas (`eda/select_companies.py` → `eda/companies.csv`, `eda/companies_batch2.csv`).
-   - Las 50 siguientes (para la demo con 100) son las de mayor valor de mercado hoy, que cotizan en el NASDAQ y tienen sede en Estados Unidos (`eda/select_by_market_cap.py` → `eda/companies_batch3.csv`).
-   - Cada lista tiene más candidatas de las necesarias a propósito: una empresa queda solo si el ETL acepta sus tres informes (un formulario 10-K, legible y de la empresa correcta; ver `etl/README.md`).
+1. **Elegir las empresas.** Empresas del NASDAQ con los tres años fiscales del alcance (2019, 2020 y 2021) en el bucket del curso, elegidas por tandas con los scripts de `eda/`; una empresa queda solo si el ETL acepta sus tres informes. Las tandas y las reglas de selección están en [`eda/README.es.md`](eda/README.es.md).
 2. **Conseguir los PDFs.** Descomprime el paquete de [PDFs de los 10-K](https://drive.google.com/file/d/1auT4HDBQU9Z4S85be526bLjghp6Ui8Pm/view?usp=sharing), o bájalos del bucket con `eda/download_sample.py --companies <lista>` (llaves de AWS en `eda/.env`, ver [Credenciales](#credenciales)). Las listas de candidatas también tienen las empresas que quedaron afuera, así que el zip es el conjunto exacto.
 3. **Correr el ETL** (texto, secciones y chunks): `docker compose --profile etl run --rm etl` → `data/chunks/`.
 4. **Calcular los embeddings.** En la CPU de una notebook tarda horas (unos 1,5 chunks por segundo); en una GPU gratis de Google Colab, unos 20 minutos. La guía paso a paso de Colab está en [`index/README.md`](index/README.md). Después se carga el índice como en el paso 3 de arriba.

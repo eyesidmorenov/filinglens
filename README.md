@@ -123,7 +123,7 @@ filinglens/
 ├── search-index/   Read-only index health, stats and filters
 ├── yahoo-finance/  Yahoo Finance coverage and snapshots (fiscal 2022 onwards; read by the API)
 ├── answer-eval/    RAGAS evaluation of the answers (questions written by RAGAS, five metrics)
-├── generation/     Prompt and Claude integration
+├── tenk-answer/    Prompt and Claude integration (answers with citations)
 ├── api/            FastAPI
 ├── ui/             Chainlit
 └── data/           Documents and intermediate output (not tracked)
@@ -204,10 +204,7 @@ From the repository root, with Docker running:
 
 Every package above comes from scripts in this repository:
 
-1. **Choose the companies** (`eda/`). The rule: NASDAQ companies with the three fiscal years in scope (2019, 2020 and 2021) in the course bucket.
-   - The first 50 come from the Nasdaq-100 of 2019 to 2021, the best-known names first (`eda/select_companies.py` → `eda/companies.csv`, `eda/companies_batch2.csv`).
-   - The next 50 (for the demo with 100) are the largest by market value today, listed on NASDAQ and based in the United States (`eda/select_by_market_cap.py` → `eda/companies_batch3.csv`).
-   - Each list has more candidates than needed on purpose: a company stays only if the ETL accepts its three filings (a Form 10-K, readable, from the right company; see `etl/README.md`).
+1. **Choose the companies.** NASDAQ companies with the three fiscal years in scope (2019, 2020 and 2021) in the course bucket, picked in batches by the scripts in `eda/`; a company stays only if the ETL accepts its three filings. The batches and the selection rules are in [`eda/README.md`](eda/README.md).
 2. **Get the PDFs.** Unzip the [10-K PDFs](https://drive.google.com/file/d/1auT4HDBQU9Z4S85be526bLjghp6Ui8Pm/view?usp=sharing) package, or download them from the bucket with `eda/download_sample.py --companies <list>` (AWS keys in `eda/.env`, see [Credentials](#credentials)). The candidate lists also hold the companies that were left out, so the zip is the exact set.
 3. **Run the ETL** (text, sections and chunks): `docker compose --profile etl run --rm etl` → `data/chunks/`.
 4. **Compute the embeddings.** On a laptop CPU this takes hours (about 1.5 chunks per second); on a free Google Colab GPU, about 20 minutes. The step-by-step Colab guide is in [`index/README.md`](index/README.md). Then load the index as in step 3 above.
