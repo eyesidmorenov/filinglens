@@ -1,8 +1,8 @@
 # Architecture Overview
 
-FilingLens AI answers questions about NASDAQ companies from their 10-K filings, and every answer cites its source: company, fiscal year, section and page. This document is the map of the system: what each part does, how the parts talk to each other, where the data lives and how to run it. Update it whenever a part or a contract changes.
+FilingLens AI answers questions about NASDAQ companies from their 10-K filings (fiscal 2019 to 2021) and, for later years, from Yahoo Finance annual figures. Every answer cites its source: company, fiscal year, section and page for a 10-K, or the fetch date for Yahoo Finance. This document is the map of the system: what each part does, how the parts talk to each other, where the data lives and how to run it. Update it whenever a part or a contract changes.
 
-*Last update: 2026-10-21 (`main` after PR #42).*
+*Last update: 2026-10-21 (`main` after PR #50).*
 
 ## 1. Project structure
 
@@ -54,8 +54,8 @@ The question flow, step by step:
 1. The user asks in the chat. The UI sends the question to `POST /ask/stream`.
 2. The API detects the company and the fiscal year. It reads the supported companies and years from the index, so adding companies needs no code change. If the company is unknown, or the year is neither in the index nor in the company's Yahoo snapshot, it says which years it can answer, without calling Claude.
 3. For a year in the index (2019 to 2021), search filters by company and year, runs BM25 and vector search, and fuses both lists with reciprocal rank fusion (RRF). It returns the best 5 chunks. For a later year (2022 onwards), the API skips search and turns the company's Yahoo Finance snapshot into one chunk (section "Yahoo Finance (fetched on <date>)", `page: 0`).
-4. tenk-answer sends the question and the chunks to Claude. Claude must answer only from those chunks, cite each claim with a `[n]` marker, say "I don't know" when the chunks do not answer, and refuse comparisons, calculations and investment advice.
-5. The API streams the answer to the chat. Each citation opens the exact text of the 10-K in a side panel.
+4. tenk-answer sends the question and the chunks to Claude. Claude must answer only from those chunks, say where each figure comes from ("According to its fiscal 2021 10-K" or "According to Yahoo Finance (fetched on <date>)"), cite each claim with a `[n]` marker, say "I don't know" when the chunks do not answer, and refuse comparisons, calculations and investment advice.
+5. The API streams the answer to the chat. Each 10-K citation opens the exact text of the filing in a side panel; a Yahoo Finance citation shows the fetch date. Under the answer, 2 or 3 suggested follow-up questions (templates, no Claude call) ask about the same company.
 
 ## 3. Components
 
@@ -66,9 +66,9 @@ The question flow, step by step:
 | index | Embed chunks with BGE and load them into Elasticsearch | Haystack, sentence-transformers | Lourdes |
 | search | Hybrid retrieval with exact company/year filters; evaluation with exact chunk labels | Haystack, Elasticsearch | José Luis |
 | search-index | Read-only health, stats and filters of the index | Python, Elasticsearch client | Luis |
-| tenk-answer | Build the context, call Claude with structured output, validate citations, stream tokens | Haystack, anthropic-haystack, Pydantic | Juan Carlos |
-| api | `/health`, `/ask`, `/ask/stream`; company and year detection; 10-K search or Yahoo snapshot by year; clear error messages; stops Claude when the user leaves | FastAPI | Kelyn |
-| ui | Chat with streaming, `[n]` citations, side panel opened on click; Yahoo citations show the fetch date instead of a page | Chainlit | Kelyn |
+| tenk-answer | Build the context from 10-K or Yahoo Finance chunks, call Claude with structured output, validate citations, stream tokens | Haystack, anthropic-haystack, Pydantic | Juan Carlos |
+| api | `/health`, `/ask`, `/ask/stream`; company and year detection; 10-K search or Yahoo snapshot by year; suggested follow-up questions; clear error messages; stops Claude when the user leaves | FastAPI | Kelyn |
+| ui | Chat with streaming, `[n]` citations, side panel opened on click; Yahoo citations show the fetch date instead of a page; suggested questions as buttons | Chainlit | Kelyn |
 | yahoo-finance | Snapshots of annual figures for the companies in the index; each company's fiscal year rule is checked against its own 10-Ks | yfinance | Lourdes, Elkin |
 | Docker and architecture | One command to run every service | Docker Compose | Elkin |
 
@@ -129,13 +129,12 @@ Every port is bound to 127.0.0.1, so nothing is exposed outside the machine.
 ## 9. Development and testing
 
 - Each part has its own unit tests, which run without Elasticsearch, the BGE model or a Claude key.
-- Current counts on `main`: api 61, tenk-answer 108, search 25, yahoo-finance 24, etl 95 (16 skipped).
+- Current counts on `main`: api 76, tenk-answer 109, search 25, yahoo-finance 24, etl 104 (7 skipped; more skip without the sample PDFs).
 - Work goes through pull requests: one branch per change, reviewed by the owner of the part it touches, merged only with an approval.
 - Search quality is measured with exact chunk labels: hybrid search finds the right chunk in the top 5 for 95% of the 150 questions (MRR 0.78, right section 99%).
 
 ## 10. Next steps
 
-- **Yahoo Finance in the prompt:** the answer prompt still speaks only of 10-K filings; it must also accept the Yahoo Finance source and say where each figure comes from.
 - **Answer cache:** cache Claude's answers (Redis) for repeated questions. Claude is the only cost per question; Yahoo is free.
 - **Answer quality:** evaluate faithfulness and answer relevancy with RAGAS.
 - **More companies:** 100, chosen by market value, with an EDA pre-flight check of each new batch before it enters the ETL.

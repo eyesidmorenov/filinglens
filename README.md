@@ -2,7 +2,7 @@
 
 **Financial Advisor Chatbot for NASDAQ companies**
 
-An assistant that answers questions about NASDAQ-listed companies by reading their annual filings, and always says where each answer came from.
+An assistant that answers questions about NASDAQ-listed companies by reading their annual 10-K filings (fiscal 2019 to 2021) and, for later years, their Yahoo Finance annual figures, and always says where each answer came from.
 
 Final project for the **ML Developer Career** program at [Anyone AI](https://anyoneai.com). Team 3.
 
@@ -86,17 +86,17 @@ Annual reports and 10-K filings from NASDAQ-listed companies, hosted on S3 by An
 
 **The ticker is the key, not the company folder.** 11 tickers appear twice for the same year, because of typos in folder names, company renames, or the same file uploaded with and without the hash. Documents are identified by `ticker` + `fiscal_year`, keeping one file per pair.
 
-**The dataset ends in 2021.** There are no documents from 2023 onward, and 2022 holds only 160 files against 2,236 for 2019. That is why the project scope is **2019, 2020 and 2021**.
+**The dataset ends in 2021.** There are no documents from 2023 onward, and 2022 holds only 160 files against 2,236 for 2019. That is why the 10-K scope is **2019, 2020 and 2021**; later years come from Yahoo Finance annual figures.
 
 **There are two document types, not one.** Some files are the SEC Form 10-K, with numbered Item sections. Others are the shareholder Annual Report, which has no such structure. Across the working sample, 79% are 10-K filings.
 
-If someone asks about a year outside the range, the bot says so instead of staying silent or making something up.
+If someone asks about a year that neither the 10-Ks nor Yahoo Finance cover, the bot says which years it can answer instead of staying silent or making something up.
 
 ---
 
 ## Scope
 
-**In scope:** 25 recognizable NASDAQ companies, three fiscal years, 10-K filings in English only, hybrid search, answers citing company, year, section and page, a chat interface, an API, full containerization, and an evaluation set to measure quality.
+**In scope:** 50 NASDAQ companies, 10-K filings in English only for three fiscal years (2019 to 2021), Yahoo Finance annual figures for later years (saved snapshots, never live calls), hybrid search, answers citing company, year, section and page (or the Yahoo Finance fetch date), a chat interface, an API, full containerization, and an evaluation set to measure quality.
 
 **Out of scope:** the full 2,428-company dataset, live news search, authentication, charts, financial tables as structured data, multi-company comparisons in a single answer, arithmetic over retrieved figures, and any form of investment recommendation.
 

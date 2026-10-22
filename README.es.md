@@ -2,7 +2,7 @@
 
 **Financial Advisor Chatbot for NASDAQ companies**
 
-Un asistente que responde preguntas sobre empresas del NASDAQ leyendo sus reportes anuales, y que siempre dice de dónde sacó cada dato.
+Un asistente que responde preguntas sobre empresas del NASDAQ leyendo sus reportes anuales 10-K (años fiscales 2019 a 2021) y, para los años siguientes, sus cifras anuales de Yahoo Finance, y que siempre dice de dónde sacó cada dato.
 
 Proyecto final del programa **ML Developer Career** de [Anyone AI](https://anyoneai.com). Equipo 3.
 
@@ -86,17 +86,17 @@ Reportes anuales y 10-K de empresas listadas en el NASDAQ, alojados en S3 por An
 
 **La llave es el ticker, no la carpeta de la empresa.** 11 tickers aparecen dos veces para el mismo año, por errores de digitación en el nombre de la carpeta, cambios de nombre de la empresa o el mismo archivo subido con y sin hash. Los documentos se identifican por `ticker` + `fiscal_year` y se conserva un solo archivo por par.
 
-**El dataset se corta en 2021.** No hay documentos de 2023 en adelante, y 2022 tiene apenas 160 archivos contra los 2.236 de 2019. Por eso el alcance del proyecto son **2019, 2020 y 2021**.
+**El dataset se corta en 2021.** No hay documentos de 2023 en adelante, y 2022 tiene apenas 160 archivos contra los 2.236 de 2019. Por eso el alcance de los 10-K son **2019, 2020 y 2021**; los años siguientes salen de las cifras anuales de Yahoo Finance.
 
 **Hay dos tipos de documento, no uno.** Unos archivos son el formulario 10-K de la SEC, con secciones Item numeradas. Otros son el Annual Report para accionistas, que no tiene esa estructura. En la muestra de trabajo, el 79% son 10-K.
 
-Si alguien pregunta por un año fuera de rango, el bot lo dice en vez de callar o inventar.
+Si alguien pregunta por un año que no cubren ni los 10-K ni Yahoo Finance, el bot dice qué años puede responder en vez de callar o inventar.
 
 ---
 
 ## Alcance
 
-**Dentro:** 25 empresas reconocibles del NASDAQ, tres años fiscales, solo 10-K en inglés, búsqueda híbrida, respuesta con cita de empresa, año, sección y página, interfaz de chat, API, todo contenerizado, y un set de evaluación para medir la calidad.
+**Dentro:** 50 empresas del NASDAQ, solo 10-K en inglés de tres años fiscales (2019 a 2021), cifras anuales de Yahoo Finance para los años siguientes (fotos guardadas, nunca consultas en vivo), búsqueda híbrida, respuesta con cita de empresa, año, sección y página (o la fecha de descarga de Yahoo Finance), interfaz de chat, API, todo contenerizado, y un set de evaluación para medir la calidad.
 
 **Fuera:** las 2.428 empresas del dataset completo, búsqueda de noticias en internet, autenticación, gráficos, tablas financieras como datos estructurados, comparaciones entre varias empresas en una sola respuesta, cálculos aritméticos, y cualquier forma de recomendación de inversión.
 
