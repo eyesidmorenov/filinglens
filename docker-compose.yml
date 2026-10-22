@@ -103,8 +103,8 @@ services:
     volumes:
       - ./data:/app/data                 # escribe data/yahoo/coverage.csv y data/yahoo/snapshots
 
-  # Evaluación RAGAS de las respuestas, en dos pasos (ver answer-eval/README.md)
-  # Paso 1: responde las preguntas etiquetadas con el mismo pipeline de la API (misma imagen que api)
+  # Evaluación RAGAS de las respuestas, en tres pasos (ver answer-eval/README.md)
+  # Paso 1: responde las preguntas (etiquetadas o las de RAGAS) con el mismo pipeline de la API (misma imagen que api)
   ragas-answers:
     build:
       context: ./api
@@ -131,16 +131,19 @@ services:
       elasticsearch:
         condition: service_healthy
 
-  # Paso 2: califica esas respuestas con RAGAS (imagen propia: otras versiones de Anthropic y LangChain)
+  # Pasos 0 y 2: RAGAS escribe las preguntas y califica las respuestas (imagen propia: otras versiones de Anthropic y LangChain)
   ragas:
     build: ./answer-eval
     profiles: ["ragas"]                  # corre solo a pedido: docker compose --profile ragas run --rm ragas
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - EMBEDDING_MODEL=BAAI/bge-base-en-v1.5
+      - QUESTIONS_FILE=/app/search/evaluation/questions.json   # las 50 empresas del set de evaluación
     volumes:
       - hf_models:/root/.cache/huggingface
-      - ./data/eval:/app/data/eval       # lee answers.jsonl, escribe scores.csv y summary.json
+      - ./data/eval:/app/data/eval       # escribe testset.jsonl, scores.csv y summary.json
+      - ./data/chunks:/app/data/chunks:ro   # los documentos de los que RAGAS escribe las preguntas (paso 0)
+      - ./search/evaluation:/app/search/evaluation:ro
 
 volumes:
   es_data:

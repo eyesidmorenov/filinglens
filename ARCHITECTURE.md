@@ -19,7 +19,7 @@ filinglens/
 ├── api/             FastAPI: detects company and year, runs search and generation
 ├── ui/              Chainlit chat: streaming answers, clickable citations
 ├── yahoo-finance/   Yahoo Finance snapshots for fiscal 2022 onwards (read by the api)
-├── answer-eval/     RAGAS evaluation of the answers, in two steps (answers, then scores)
+├── answer-eval/     RAGAS evaluation of the answers, in three steps (questions, answers, scores)
 ├── docker-compose.yml
 └── data/            PDFs, chunks, embeddings and reports (never committed)
 ```
@@ -138,7 +138,7 @@ Every port is bound to 127.0.0.1, so nothing is exposed outside the machine.
 
 - **Yahoo Finance in the prompt:** the answer prompt still speaks only of 10-K filings; it must also accept the Yahoo Finance source and say where each figure comes from.
 - **Answer cache:** cache Claude's answers (Redis) for repeated questions. Claude is the only cost per question; Yahoo is free.
-- **Answer quality:** run the RAGAS evaluation (`answer-eval/`) on the final index and report faithfulness, answer relevancy and context precision.
+- **Answer quality:** run the RAGAS evaluation (`answer-eval/`) on the final index and report context recall, context precision, faithfulness, answer relevancy and factual correctness.
 - **More companies:** 100, chosen by market value, with an EDA pre-flight check of each new batch before it enters the ETL.
 - **CI:** run every part's tests on each pull request (GitHub Actions).
 

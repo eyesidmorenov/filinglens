@@ -1,5 +1,5 @@
 """
-Step 1 of 2: answer a sample of the labeled questions with the API's own pipeline.
+Step 1: answer the questions with the API's own pipeline (labeled ones, or RAGAS's with --testset).
 
 Runs in the API image (see the ragas-answers service in docker-compose.yml): company and year
 detection, hybrid search or Yahoo snapshot, and tenk-answer, exactly as the chat does. For each
@@ -8,10 +8,16 @@ the chunks Claude was given (the API response only carries short excerpts).
 
 Writes data/eval/ragas/<date and time>/answers.jsonl. Step 2 (score.py) scores that file.
 
+With --testset it answers the questions RAGAS wrote in step 0 (testset.py) instead, in the same run
+folder. Those questions don't always name the company or the year, so they go to the pipeline with
+the company and year of the filing each one was written from, as the evaluation of the search does.
+Their reference answers go into answers.jsonl, for the metrics that compare against them.
+
 Usage (from the repository root; Elasticsearch running and ANTHROPIC_API_KEY in .env):
     docker compose --profile ragas run --rm ragas-answers                        # 30 questions
     docker compose --profile ragas run --rm ragas-answers python -m ragas_eval.answers --limit 5
     docker compose --profile ragas run --rm ragas-answers python -m ragas_eval.answers --limit 0   # all
+    docker compose --profile ragas run --rm ragas-answers python -m ragas_eval.answers --testset 2026-10-21_2300
 """
 
 from __future__ import annotations
@@ -28,10 +34,17 @@ from typing import Any
 from .common import DEFAULT_LIMIT, QUESTIONS, load_questions, runs_dir, sample
 
 
-def answer_one(pipeline: Any, q: dict[str, Any]) -> dict[str, Any]:
-    """Run the API pipeline for one question and keep what RAGAS needs."""
+def answer_one(pipeline: Any, q: dict[str, Any], given_company_year: bool = False) -> dict[str, Any]:
+    """Run the API pipeline for one question and keep what RAGAS needs.
+
+    given_company_year: pass the question's own ticker and fiscal year (RAGAS questions) instead of
+    detecting them in the text (the labeled questions, which always name both).
+    """
     start = time.perf_counter()
-    ticker, year, message = pipeline.resolve_company_year(q["question"])
+    if given_company_year:
+        ticker, year, message = pipeline.resolve_company_year(q["question"], q.get("ticker"), q.get("fiscal_year"))
+    else:
+        ticker, year, message = pipeline.resolve_company_year(q["question"])
     record: dict[str, Any] = {
         "id": q["id"],
         "question": q["question"],
@@ -53,6 +66,8 @@ def answer_one(pipeline: Any, q: dict[str, Any]) -> dict[str, Any]:
             cited=len(result.sources),
             usage=dict(result.usage or {}),
         )
+    if q.get("reference"):
+        record["reference"] = q["reference"]
     record["latency_ms"] = round((time.perf_counter() - start) * 1000)
     return record
 
@@ -73,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
                     help=f"number of questions, spread over the categories (default {DEFAULT_LIMIT}; 0 = all)")
     ap.add_argument("--questions", type=Path, default=QUESTIONS, help="labeled questions (search/evaluation)")
     ap.add_argument("--out", type=Path, default=None, help="run folder (default: data/eval/ragas/<time>)")
+    ap.add_argument("--testset", default=None,
+                    help="answer the RAGAS questions of this run (folder name under data/eval/ragas, from step 0)")
     args = ap.parse_args(argv)
 
     if not os.environ.get("ANTHROPIC_API_KEY"):
@@ -81,8 +98,14 @@ def main(argv: list[str] | None = None) -> int:
 
     from app import pipeline  # the API's own pipeline (api/app/pipeline.py)
 
-    chosen = sample(load_questions(args.questions), args.limit)
-    out_dir = args.out or runs_dir() / datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
+    if args.testset:
+        out_dir = runs_dir() / args.testset
+        with open(out_dir / "testset.jsonl", encoding="utf-8") as f:
+            chosen = [json.loads(line) for line in f if line.strip()]
+        chosen = [q for q in chosen if q.get("ticker") and q.get("fiscal_year")]
+    else:
+        chosen = sample(load_questions(args.questions), args.limit)
+        out_dir = args.out or runs_dir() / datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M")
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / "answers.jsonl"
     print(f"Answering {len(chosen)} questions with the API pipeline -> {path}")
@@ -91,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     with open(path, "w", encoding="utf-8") as f:
         for i, q in enumerate(chosen, 1):
             try:
-                record = answer_one(pipeline, q)
+                record = answer_one(pipeline, q, given_company_year=bool(args.testset))
             except Exception as exc:
                 record = failed(q, exc)
             f.write(json.dumps(record, ensure_ascii=False) + "\n")

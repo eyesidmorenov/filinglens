@@ -53,3 +53,28 @@ def latest_run() -> Path | None:
     """The newest run folder that has an answers.jsonl, or None."""
     runs = sorted(p for p in runs_dir().glob("*") if (p / "answers.jsonl").is_file()) if runs_dir().exists() else []
     return runs[-1] if runs else None
+
+
+def ragas_models(model: str):
+    """Claude (through LangChain) for RAGAS, and the BGE embeddings the index already uses.
+
+    RAGAS always sends a `temperature`, and claude-sonnet-5 rejects it ("`temperature` is deprecated
+    for this model", HTTP 400 on every call). The small subclass leaves it out of the request.
+    Imported here, not at the top: answers.py runs in the API image, which has no LangChain.
+    """
+    from langchain_anthropic import ChatAnthropic
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from ragas.embeddings import LangchainEmbeddingsWrapper
+    from ragas.llms import LangchainLLMWrapper
+
+    class ClaudeWithoutTemperature(ChatAnthropic):
+        def _get_request_payload(self, *args: Any, **kwargs: Any) -> dict:
+            payload = super()._get_request_payload(*args, **kwargs)
+            payload.pop("temperature", None)
+            return payload
+
+    llm = LangchainLLMWrapper(ClaudeWithoutTemperature(model=model, max_tokens=4096, timeout=120, max_retries=3))
+    embeddings = LangchainEmbeddingsWrapper(
+        HuggingFaceEmbeddings(model_name=os.environ.get("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5"))
+    )
+    return llm, embeddings
