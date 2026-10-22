@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .common import data_dir, runs_dir
+from .common import data_dir, ragas_models, runs_dir
 
 DEFAULT_N = 20
 DEFAULT_FILINGS = 10
@@ -101,17 +101,28 @@ def source_of(reference_contexts: list[str], docs: list[Any]) -> dict[str, Any]:
 
 
 def judge(model: str):
-    """Claude (through LangChain) for RAGAS, and the BGE embeddings the index already uses."""
-    from langchain_anthropic import ChatAnthropic
-    from langchain_huggingface import HuggingFaceEmbeddings
-    from ragas.embeddings import LangchainEmbeddingsWrapper
-    from ragas.llms import LangchainLLMWrapper
+    """RAGAS judge (Claude, without `temperature`) and embeddings (BGE): see common.ragas_models."""
+    return ragas_models(model)
 
-    llm = LangchainLLMWrapper(ChatAnthropic(model=model, max_tokens=4096, timeout=120, max_retries=3))
-    embeddings = LangchainEmbeddingsWrapper(
-        HuggingFaceEmbeddings(model_name=os.environ.get("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5"))
-    )
-    return llm, embeddings
+
+def analyst_questions(llm: Any) -> Any:
+    """RAGAS's single-hop synthesizer, writing as our user writes: correct grammar, medium or long.
+
+    By default RAGAS also mixes misspelled, poor-grammar and web-search-like queries; the first try
+    gave "where r AAG hq located in fort worth texas?". Only the style and length change.
+    """
+    from ragas.testset.synthesizers.base import QueryLength, QueryStyle
+    from ragas.testset.synthesizers.single_hop.specific import SingleHopSpecificQuerySynthesizer
+
+    class AnalystQuestions(SingleHopSpecificQuerySynthesizer):
+        def prepare_combinations(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+            combinations = super().prepare_combinations(*args, **kwargs)
+            for combination in combinations:
+                combination["styles"] = [QueryStyle.PERFECT_GRAMMAR]
+                combination["lengths"] = [QueryLength.MEDIUM, QueryLength.LONG]
+            return combinations
+
+    return AnalystQuestions(llm=llm)
 
 
 def generate(docs: list[Any], n: int, model: str) -> tuple[list[dict[str, Any]], dict[str, int]]:
@@ -120,7 +131,6 @@ def generate(docs: list[Any], n: int, model: str) -> tuple[list[dict[str, Any]],
     from ragas.cost import get_token_usage_for_anthropic
     from ragas.testset import TestsetGenerator
     from ragas.testset.persona import Persona
-    from ragas.testset.synthesizers.single_hop.specific import SingleHopSpecificQuerySynthesizer
 
     llm, embeddings = judge(model)
     generator = TestsetGenerator(
@@ -130,7 +140,7 @@ def generate(docs: list[Any], n: int, model: str) -> tuple[list[dict[str, Any]],
     testset = generator.generate_with_langchain_docs(
         docs,
         testset_size=n,
-        query_distribution=[(SingleHopSpecificQuerySynthesizer(llm=llm), 1.0)],
+        query_distribution=[(analyst_questions(llm), 1.0)],
         run_config=RunConfig(max_workers=4, timeout=180),
         token_usage_parser=get_token_usage_for_anthropic,
     )

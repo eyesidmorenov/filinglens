@@ -1,5 +1,5 @@
 """
-Step 1 of 2: answer a sample of the labeled questions with the API's own pipeline.
+Step 1: answer the questions with the API's own pipeline (labeled ones, or RAGAS's with --testset).
 
 Runs in the API image (see the ragas-answers service in docker-compose.yml): company and year
 detection, hybrid search or Yahoo snapshot, and tenk-answer, exactly as the chat does. For each

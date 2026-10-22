@@ -11,4 +11,5 @@ langchain-community>=0.3,<0.4
 langchain-anthropic>=0.3,<0.4
 langchain-huggingface>=0.3,<0.4
 pandas
+rapidfuzz  # RAGAS testset: string overlap between the entities of two chunks
 pytest==8.4.2

@@ -122,7 +122,7 @@ filinglens/
 ├── search/         Pipeline de recuperación y evaluación
 ├── search-index/   Estado, conteos y filtros del índice (solo lectura)
 ├── yahoo-finance/  Cobertura y fotos de Yahoo Finance (año fiscal 2022 en adelante; las lee la API)
-├── answer-eval/    Evaluación RAGAS de las respuestas (fidelidad, relevancia de la respuesta, precisión del contexto)
+├── answer-eval/    Evaluación RAGAS de las respuestas (preguntas escritas por RAGAS, cinco métricas)
 ├── generation/     Prompt y conexión con Claude
 ├── api/            FastAPI
 ├── ui/             Chainlit

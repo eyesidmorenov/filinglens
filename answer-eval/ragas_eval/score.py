@@ -1,5 +1,5 @@
 """
-Step 2 of 2: score the answers of step 1 with RAGAS.
+Step 2: score the answers of step 1 with RAGAS.
 
     context_recall       the chunks given to Claude hold everything the reference answer needs (search)
     context_precision    the useful chunks come first (search)
@@ -20,7 +20,7 @@ Runs in its own image (answer-eval/Dockerfile): RAGAS needs other versions of th
 LangChain libraries than tenk-answer, so the two steps never share an environment.
 
 Reads data/eval/ragas/<run>/answers.jsonl (the latest run by default) and writes, in the same folder:
-    scores.csv      one row per scored answer with its three scores
+    scores.csv      one row per scored answer with its scores (five, or three without a reference)
     summary.json    averages, by category, status counts, tokens and the judge model
 
 Usage (from the repository root):
@@ -40,7 +40,7 @@ from pathlib import Path
 from statistics import mean
 from typing import Any
 
-from .common import latest_run
+from .common import latest_run, ragas_models
 
 METRICS_WITHOUT_REFERENCE = ("faithfulness", "answer_relevancy", "context_precision")
 METRICS_WITH_REFERENCE = ("context_recall", "context_precision", "faithfulness", "answer_relevancy",
@@ -75,22 +75,15 @@ def to_score(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def judge(model: str):
-    """RAGAS judge (Claude through LangChain) and embeddings (BGE, already cached for the index)."""
-    from langchain_anthropic import ChatAnthropic
-    from langchain_huggingface import HuggingFaceEmbeddings
-    from ragas.embeddings import LangchainEmbeddingsWrapper
-    from ragas.llms import LangchainLLMWrapper
-
-    llm = LangchainLLMWrapper(ChatAnthropic(model=model, max_tokens=4096, timeout=120, max_retries=3))
-    embeddings = LangchainEmbeddingsWrapper(
-        HuggingFaceEmbeddings(model_name=os.environ.get("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5"))
-    )
-    return llm, embeddings
+    """RAGAS judge (Claude, without `temperature`) and embeddings (BGE): see common.ragas_models."""
+    return ragas_models(model)
 
 
-def ragas_scores(records: list[dict[str, Any]], model: str) -> list[dict[str, float | None]]:
-    """The scores of each record, in the same order: five with reference answers, three without."""
+def ragas_scores(records: list[dict[str, Any]], model: str) -> tuple[list[dict[str, float | None]], dict[str, int]]:
+    """The scores of each record, in the same order (five with reference answers, three without),
+    and the tokens the judge used."""
     from ragas import EvaluationDataset, RunConfig, evaluate
+    from ragas.cost import get_token_usage_for_anthropic
     from ragas.metrics import (
         FactualCorrectness,
         Faithfulness,
@@ -127,10 +120,17 @@ def ragas_scores(records: list[dict[str, Any]], model: str) -> list[dict[str, fl
         metrics=metrics,
         run_config=RunConfig(max_workers=4, timeout=180),
         show_progress=True,
+        token_usage_parser=get_token_usage_for_anthropic,
     )
     frame = result.to_pandas()
     columns = {c: our_name(c) for c in frame.columns if our_name(c)}
-    return [{ours: clean(row.get(theirs)) for theirs, ours in columns.items()} for _, row in frame.iterrows()]
+    try:
+        usage = result.total_tokens()
+        tokens = {"input": int(usage.input_tokens), "output": int(usage.output_tokens)}
+    except Exception:  # noqa: BLE001 - the token count is a nice-to-have
+        tokens = {}
+    scores = [{ours: clean(row.get(theirs)) for theirs, ours in columns.items()} for _, row in frame.iterrows()]
+    return scores, tokens
 
 
 def clean(value: Any) -> float | None:
@@ -216,12 +216,13 @@ def main(argv: list[str] | None = None) -> int:
     records = load_answers(run / "answers.jsonl")
     answered = to_score(records)
     print(f"Scoring {len(answered)} of {len(records)} answers in {run} (judge: {args.model})")
-    scores = ragas_scores(answered, args.model) if answered else []
+    scores, judge_tokens = ragas_scores(answered, args.model) if answered else ([], {})
     scored = [{"id": r["id"], "category": r.get("category", ""), "question": r["question"], **s}
               for r, s in zip(answered, scores)]
 
     summary = summarize(records, scored)
     summary["judge_model"] = args.model
+    summary["judge_tokens"] = judge_tokens
     summary["run"] = run.name
     write_outputs(run, scored, summary)
     print_summary(summary)
