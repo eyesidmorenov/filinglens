@@ -103,6 +103,48 @@ services:
     volumes:
       - ./data:/app/data                 # escribe data/yahoo/coverage.csv y data/yahoo/snapshots
 
+  # Evaluación RAGAS de las respuestas, en tres pasos (ver answer-eval/README.md)
+  # Paso 1: responde las preguntas (etiquetadas o las de RAGAS) con el mismo pipeline de la API (misma imagen que api)
+  ragas-answers:
+    build:
+      context: ./api
+      additional_contexts:
+        search: ./search
+        tenk: ./tenk-answer
+    profiles: ["ragas"]                  # corre solo a pedido: docker compose --profile ragas run --rm ragas-answers
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - EMBEDDING_MODEL=BAAI/bge-base-en-v1.5
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - YAHOO_DIR=/app/data/yahoo
+      - PYTHONPATH=/app:/app/answer-eval
+      - DATA_DIR=/app/data
+      - QUESTIONS_FILE=/app/search/evaluation/questions.json
+    volumes:
+      - hf_models:/root/.cache/huggingface
+      - ./data/yahoo:/app/data/yahoo:ro
+      - ./data/eval:/app/data/eval       # escribe data/eval/ragas/<fecha>/answers.jsonl
+      - ./search/evaluation:/app/search/evaluation:ro
+      - ./answer-eval:/app/answer-eval:ro
+    command: ["python", "-m", "ragas_eval.answers"]
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  # Pasos 0 y 2: RAGAS escribe las preguntas y califica las respuestas (imagen propia: otras versiones de Anthropic y LangChain)
+  ragas:
+    build: ./answer-eval
+    profiles: ["ragas"]                  # corre solo a pedido: docker compose --profile ragas run --rm ragas
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - EMBEDDING_MODEL=BAAI/bge-base-en-v1.5
+      - QUESTIONS_FILE=/app/search/evaluation/questions.json   # las 50 empresas del set de evaluación
+    volumes:
+      - hf_models:/root/.cache/huggingface
+      - ./data/eval:/app/data/eval       # escribe testset.jsonl, scores.csv y summary.json
+      - ./data/chunks:/app/data/chunks:ro   # los documentos de los que RAGAS escribe las preguntas (paso 0)
+      - ./search/evaluation:/app/search/evaluation:ro
+
 volumes:
   es_data:
   hf_models:

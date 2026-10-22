@@ -1,0 +1,15 @@
+# The RAGAS image (testset.py and score.py). answers.py runs in the API image with the API's own libraries.
+# RAGAS 0.4.3, the version of Mariano's script. It needs the LangChain 0.3 family: with LangChain 1.x
+# it fails on import (langchain_community.chat_models.vertexai no longer exists).
+# CPU-only PyTorch for the BGE embeddings, as in api/ and search/
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.*
+sentence-transformers==6.1.0
+ragas==0.4.3
+langchain-core>=0.3,<0.4
+langchain-community>=0.3,<0.4
+langchain-anthropic>=0.3,<0.4
+langchain-huggingface>=0.3,<0.4
+pandas
+rapidfuzz  # RAGAS testset: string overlap between the entities of two chunks
+pytest==8.4.2
