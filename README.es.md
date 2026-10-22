@@ -174,6 +174,45 @@ Los resultados quedan en tu carpeta `data/` y los cambios al notebook se guardan
 
 El script de descarga es **determinista**: baja siempre exactamente los mismos archivos, sin importar quién lo corra. Así todo el equipo trabaja con la misma muestra y los resultados son comparables.
 
+### Levantar la app
+
+Los datos nunca entran al repositorio (ni PDFs, ni chunks, ni embeddings, ni cachés). Se comparten como zips en Google Drive, abiertos a cualquiera con el enlace, y cada uno se descomprime en la raíz del repositorio (`data/...`):
+
+| Paquete | Contenido | Tamaño | Para qué hace falta |
+| --- | --- | --- | --- |
+| [Chunks + embeddings, v5](https://drive.google.com/file/d/12WEIkrlJs1WZzmq1v5UCtFk5Z8RtmRZN/view?usp=sharing) | `data/chunks/` y `data/embeddings/`: 50 empresas, 150 informes (años fiscales 2019 a 2021), 50.785 chunks con sus vectores BGE | 165 MB | Cargar el índice (obligatorio) |
+| [Fotos de Yahoo Finance](https://drive.google.com/file/d/1bac_pUpky9kiOvYQg-QBy0EDT4fku4Fz/view?usp=sharing) | `data/yahoo/`: cifras anuales desde el año fiscal 2022 de las 50 empresas | 33 KB | Respuestas de 2022 en adelante |
+| [PDFs de los 10-K](https://drive.google.com/file/d/1auT4HDBQU9Z4S85be526bLjghp6Ui8Pm/view?usp=sharing) | `data/raw/`: los 150 PDFs, renombrados `TICKER_AÑO.pdf` | 589 MB | Solo para volver a correr el ETL |
+
+Desde la raíz del repositorio, con Docker abierto:
+
+1. Crea un archivo `.env` en la raíz con tu propia llave de Claude: `ANTHROPIC_API_KEY=...`. Nunca se sube, y cada llamada se cobra en esa llave (unos $0,012 por pregunta).
+2. Descomprime en la raíz el paquete de chunks + embeddings y las fotos de Yahoo Finance.
+3. Carga el índice. Todos los vectores vienen del paquete, así que no se recalcula nada (unos 10 minutos):
+   ```bash
+   docker compose up -d elasticsearch
+   docker compose --profile index run --rm index
+   ```
+   Termina con `Index 'filinglens-chunks' now holds 50785 chunks`.
+4. Levanta la API y el chat:
+   ```bash
+   docker compose up -d --build
+   ```
+   El chat queda en http://localhost:8001 (documentación de la API en http://localhost:8000/docs). La primera respuesta tarda unos 40 segundos mientras cargan los modelos.
+
+### Regenerar los datos desde cero
+
+Cada paquete de arriba sale de scripts de este repositorio:
+
+1. **Elegir las empresas** (`eda/`). La regla: empresas del NASDAQ con los tres años fiscales del alcance (2019, 2020 y 2021) en el bucket del curso.
+   - Las primeras 50 salen del Nasdaq-100 de 2019 a 2021, primero las más conocidas (`eda/select_companies.py` → `eda/companies.csv`, `eda/companies_batch2.csv`).
+   - Las 50 siguientes (para la demo con 100) son las de mayor valor de mercado hoy, que cotizan en el NASDAQ y tienen sede en Estados Unidos (`eda/select_by_market_cap.py` → `eda/companies_batch3.csv`).
+   - Cada lista tiene más candidatas de las necesarias a propósito: una empresa queda solo si el ETL acepta sus tres informes (un formulario 10-K, legible y de la empresa correcta; ver `etl/README.md`).
+2. **Conseguir los PDFs.** Descomprime el paquete de [PDFs de los 10-K](https://drive.google.com/file/d/1auT4HDBQU9Z4S85be526bLjghp6Ui8Pm/view?usp=sharing), o bájalos del bucket con `eda/download_sample.py --companies <lista>` (llaves de AWS en `eda/.env`, ver [Credenciales](#credenciales)). Las listas de candidatas también tienen las empresas que quedaron afuera, así que el zip es el conjunto exacto.
+3. **Correr el ETL** (texto, secciones y chunks): `docker compose --profile etl run --rm etl` → `data/chunks/`.
+4. **Calcular los embeddings.** En la CPU de una notebook tarda horas (unos 1,5 chunks por segundo); en una GPU gratis de Google Colab, unos 20 minutos. La guía paso a paso de Colab está en [`index/README.md`](index/README.md). Después se carga el índice como en el paso 3 de arriba.
+5. **Bajar las fotos de Yahoo Finance** (unos 2 minutos, con internet): `docker compose --profile yahoo run --rm yahoo` → `data/yahoo/`. Ver [`yahoo-finance/README.md`](yahoo-finance/README.md).
+
 ---
 
 ## Contratos de datos
@@ -254,7 +293,7 @@ Sin `--global`, así solo aplica a este repositorio. El historial de commits es 
 | 1 | Análisis exploratorio del dataset | `eda/` |
 | 2 | Scripts de preprocesamiento | `etl/` |
 | 3 | Scripts de almacenamiento en la base | `index/` |
-| 4 | Sistema de pregunta, búsqueda y respuesta | `search/` y `generation/` |
+| 4 | Sistema de pregunta, búsqueda y respuesta | `search/` y `tenk-answer/` |
 | 5 | API | `api/` |
 | 6 | Interfaz tipo ChatGPT | `ui/` |
 | 7 | Presentar resultados y demo | todos |
