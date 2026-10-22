@@ -2,7 +2,7 @@
 
 **Financial Advisor Chatbot for NASDAQ companies**
 
-Un asistente que responde preguntas sobre empresas del NASDAQ leyendo sus reportes anuales, y que siempre dice de dónde sacó cada dato.
+Un asistente que responde preguntas sobre empresas del NASDAQ leyendo sus reportes anuales 10-K (años fiscales 2019 a 2021) y, para los años siguientes, sus cifras anuales de Yahoo Finance, y que siempre dice de dónde sacó cada dato.
 
 Proyecto final del programa **ML Developer Career** de [Anyone AI](https://anyoneai.com). Equipo 3.
 
