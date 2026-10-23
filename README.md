@@ -198,7 +198,7 @@ From the repository root, with Docker running:
    ```bash
    docker compose up -d --build
    ```
-   Open the chat at http://localhost:8001 (API docs at http://localhost:8000/docs). The first answer takes about 40 seconds while the models load.
+   Open the chat at http://localhost:8001 (API docs at http://localhost:8000/docs). The API loads the search model in the background when it starts (about 20 to 30 seconds; `docker compose logs api` shows `Warm-up done`). A question asked before that waits for it.
 
 ### Rebuilding the data from scratch
 

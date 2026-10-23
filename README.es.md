@@ -198,7 +198,7 @@ Desde la raíz del repositorio, con Docker abierto:
    ```bash
    docker compose up -d --build
    ```
-   El chat queda en http://localhost:8001 (documentación de la API en http://localhost:8000/docs). La primera respuesta tarda unos 40 segundos mientras cargan los modelos.
+   El chat queda en http://localhost:8001 (documentación de la API en http://localhost:8000/docs). La API carga el modelo de búsqueda en segundo plano al arrancar (unos 20 a 30 segundos; `docker compose logs api` muestra `Warm-up done`). Una pregunta hecha antes espera a que termine.
 
 ### Regenerar los datos desde cero
 
