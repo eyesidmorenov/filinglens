@@ -70,7 +70,7 @@ def ask(payload: Question):
         # Elasticsearch or Claude failed: a clear message instead of a bare HTTP 500 (backlog #6)
         logger.exception("/ask failed")
         raise HTTPException(status_code=503, detail=ANSWER_ERROR)
-    # Latencia total (búsqueda + generación). Pendiente confirmar con el equipo.
+    # Total latency (search + generation). To be confirmed with the team.
     latency_ms = int((time.perf_counter() - start) * 1000)
     return Answer(
         answer=result["answer"],
