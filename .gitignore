@@ -12,6 +12,7 @@ __pycache__/
 # Datos: nunca van al repositorio
 data/
 *.pdf
+/README.txt   # el README de los zips del Drive, que se descomprimen en la raíz
 
 # Basura de sistema
 .DS_Store
