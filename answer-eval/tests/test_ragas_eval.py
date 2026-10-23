@@ -32,7 +32,8 @@ class FakePipeline:
         return (None, None, self.message) if self.message else (ticker or "AAPL", fiscal_year or 2019, None)
 
     def retrieve(self, question, ticker, year):
-        return [{"chunk_id": "AAPL_2019_10K_p4_c2", "text": "Apple designs iPhone."}]
+        return [{"chunk_id": "AAPL_2019_10K_p4_c2", "text": "Apple designs iPhone.", "company": "Apple Inc.",
+                 "fiscal_year": 2019, "section": "Item 1", "page": 4}]
 
     def get_generator(self):
         result = SimpleNamespace(status=SimpleNamespace(value=self.status), answer="Apple designs iPhone [1].",
@@ -43,7 +44,8 @@ class FakePipeline:
 def test_answer_keeps_the_full_chunks_claude_saw():
     record = answers.answer_one(FakePipeline(), QUESTIONS[0])
     assert record["status"] == "answered"
-    assert record["contexts"] == ["Apple designs iPhone."]
+    # with its source, as Claude reads it, so the judge can check "According to its fiscal 2019 10-K"
+    assert record["contexts"] == ["Source: Apple Inc., fiscal 2019 10-K, Item 1, page 4\nApple designs iPhone."]
     assert record["chunk_ids"] == ["AAPL_2019_10K_p4_c2"]
     assert record["detected"] == record["expected"] == {"ticker": "AAPL", "fiscal_year": 2019}
 
@@ -151,3 +153,10 @@ def test_ragas_columns_take_our_metric_names():
     assert score.our_name("user_input") is None
     assert score.metric_columns([{"faithfulness": 1.0, "context_recall": 0.5}]) == score.METRICS_WITH_REFERENCE
     assert score.metric_columns([{"faithfulness": 1.0}]) == score.METRICS_WITHOUT_REFERENCE
+
+
+def test_a_yahoo_snapshot_keeps_its_fetch_date_as_source():
+    hit = {"chunk_id": "yahoo-AAPL-2023", "text": "- Total revenue: 383.3B", "company": "Apple Inc.",
+           "fiscal_year": 2023, "section": "Yahoo Finance (fetched on 2026-10-20)", "page": 0}
+    assert answers.as_claude_saw(hit).splitlines()[0] == \
+        "Source: Apple Inc., fiscal 2023, Yahoo Finance (fetched on 2026-10-20)"

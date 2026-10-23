@@ -34,6 +34,21 @@ from typing import Any
 from .common import DEFAULT_LIMIT, QUESTIONS, load_questions, runs_dir, sample
 
 
+def as_claude_saw(hit: dict[str, Any]) -> str:
+    """A chunk with its source above the text, as tenk-answer gives it to Claude.
+
+    Claude reads each chunk with its company, fiscal year, section and page, and the answer says
+    where each figure comes from ("According to its fiscal 2020 10-K"). With the bare text, the
+    RAGAS judge can't check that and counts it as unsupported, which lowers faithfulness.
+    """
+    section = hit.get("section") or ""
+    if section.startswith("Yahoo Finance"):
+        source = f"{hit.get('company')}, fiscal {hit.get('fiscal_year')}, {section}"
+    else:
+        source = f"{hit.get('company')}, fiscal {hit.get('fiscal_year')} 10-K, {section}, page {hit.get('page')}"
+    return f"Source: {source}\n{hit['text']}"
+
+
 def answer_one(pipeline: Any, q: dict[str, Any], given_company_year: bool = False) -> dict[str, Any]:
     """Run the API pipeline for one question and keep what RAGAS needs.
 
@@ -61,7 +76,7 @@ def answer_one(pipeline: Any, q: dict[str, Any], given_company_year: bool = Fals
         record.update(
             status=getattr(result.status, "value", str(result.status)),
             answer=result.answer,
-            contexts=[h["text"] for h in hits],
+            contexts=[as_claude_saw(h) for h in hits],
             chunk_ids=[h["chunk_id"] for h in hits],
             cited=len(result.sources),
             usage=dict(result.usage or {}),
