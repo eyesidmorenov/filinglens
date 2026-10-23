@@ -123,7 +123,7 @@ filinglens/
 ├── search-index/   Read-only index health, stats and filters
 ├── yahoo-finance/  Yahoo Finance coverage and snapshots (fiscal 2022 onwards; read by the API)
 ├── answer-eval/    RAGAS evaluation of the answers (questions written by RAGAS, five metrics)
-├── generation/     Prompt and Claude integration
+├── tenk-answer/    Prompt and Claude integration (answers with citations)
 ├── api/            FastAPI
 ├── ui/             Chainlit
 └── data/           Documents and intermediate output (not tracked)
@@ -173,6 +173,42 @@ docker compose --profile eda up eda                                  # notebook 
 Results land in your `data/` folder and notebook changes are saved in `eda/`. The `.env` never enters the image.
 
 The download script is **deterministic**: it always fetches exactly the same files, regardless of who runs it. That way the whole team works from an identical sample and results are comparable.
+
+### Running the app
+
+The data never enters the repository (no PDFs, chunks, embeddings or caches). It is shared as zip files on Google Drive, open to anyone with the link, and each one unzips into the repository root (`data/...`):
+
+| Package | Content | Size | Needed for |
+| --- | --- | --- | --- |
+| [Chunks + embeddings, v5](https://drive.google.com/file/d/12WEIkrlJs1WZzmq1v5UCtFk5Z8RtmRZN/view?usp=sharing) | `data/chunks/` and `data/embeddings/`: 50 companies, 150 filings (fiscal 2019 to 2021), 50,785 chunks with their BGE vectors | 165 MB | Loading the index (required) |
+| [Yahoo Finance snapshots](https://drive.google.com/file/d/1bac_pUpky9kiOvYQg-QBy0EDT4fku4Fz/view?usp=sharing) | `data/yahoo/`: annual figures from fiscal 2022 onwards for the 50 companies | 33 KB | Answers for 2022 onwards |
+| [10-K PDFs](https://drive.google.com/file/d/1auT4HDBQU9Z4S85be526bLjghp6Ui8Pm/view?usp=sharing) | `data/raw/`: the 150 PDFs, renamed `TICKER_YEAR.pdf` | 589 MB | Only to rerun the ETL |
+
+From the repository root, with Docker running:
+
+1. Create a `.env` file in the root with your own Claude key: `ANTHROPIC_API_KEY=...`. It is never committed, and every call is billed to that key (about $0.012 per question).
+2. Unzip the chunks + embeddings package and the Yahoo Finance snapshots into the root.
+3. Load the index. Every vector comes from the package, so nothing is recomputed (about 10 minutes):
+   ```bash
+   docker compose up -d elasticsearch
+   docker compose --profile index run --rm index
+   ```
+   It ends with `Index 'filinglens-chunks' now holds 50785 chunks`.
+4. Start the API and the chat:
+   ```bash
+   docker compose up -d --build
+   ```
+   Open the chat at http://localhost:8001 (API docs at http://localhost:8000/docs). The API loads the search model in the background when it starts (about 20 to 30 seconds; `docker compose logs api` shows `Warm-up done`). A question asked before that waits for it.
+
+### Rebuilding the data from scratch
+
+Every package above comes from scripts in this repository:
+
+1. **Choose the companies.** NASDAQ companies with the three fiscal years in scope (2019, 2020 and 2021) in the course bucket, picked in batches by the scripts in `eda/`; a company stays only if the ETL accepts its three filings. The batches and the selection rules are in [`eda/README.md`](eda/README.md).
+2. **Get the PDFs.** Unzip the [10-K PDFs](https://drive.google.com/file/d/1auT4HDBQU9Z4S85be526bLjghp6Ui8Pm/view?usp=sharing) package, or download them from the bucket with `eda/download_sample.py --companies <list>` (AWS keys in `eda/.env`, see [Credentials](#credentials)). The candidate lists also hold the companies that were left out, so the zip is the exact set.
+3. **Run the ETL** (text, sections and chunks): `docker compose --profile etl run --rm etl` → `data/chunks/`.
+4. **Compute the embeddings.** On a laptop CPU this takes hours (about 1.5 chunks per second); on a free Google Colab GPU, about 20 minutes. The step-by-step Colab guide is in [`index/README.md`](index/README.md). Then load the index as in step 3 above.
+5. **Fetch the Yahoo Finance snapshots** (about 2 minutes, needs internet): `docker compose --profile yahoo run --rm yahoo` → `data/yahoo/`. See [`yahoo-finance/README.md`](yahoo-finance/README.md).
 
 ---
 
@@ -255,7 +291,7 @@ No `--global`, so it only applies to this repository. Commit history is the reco
 | 1 | Exploratory dataset analysis | `eda/` |
 | 2 | Preprocessing scripts | `etl/` |
 | 3 | Database storage scripts | `index/` |
-| 4 | Question, search and answer system | `search/` and `generation/` |
+| 4 | Question, search and answer system | `search/` and `tenk-answer/` |
 | 5 | API | `api/` |
 | 6 | ChatGPT-style interface | `ui/` |
 | 7 | Present results and demo | everyone |
