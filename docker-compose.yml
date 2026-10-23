@@ -1,18 +1,18 @@
-# FilingLens AI · servicios del proyecto
-# Hoy: Elasticsearch, la API, la UI (Chainlit), el EDA, el ETL y el índice.
+# FilingLens AI · project services
+# Always on: Elasticsearch, the API and the UI (Chainlit). On demand: EDA, ETL, index, Yahoo Finance and RAGAS.
 
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
     container_name: filinglens-es
     environment:
-      - discovery.type=single-node       # un solo nodo, sin clúster
-      - xpack.security.enabled=false     # sin usuario ni clave, solo para desarrollo local
-      - ES_JAVA_OPTS=-Xms1g -Xmx1g       # 1 GB de memoria para Elasticsearch
+      - discovery.type=single-node       # a single node, no cluster
+      - xpack.security.enabled=false     # no user or password, local development only
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g       # 1 GB of memory for Elasticsearch
     ports:
-      - "127.0.0.1:9200:9200"            # solo accesible desde tu máquina
+      - "127.0.0.1:9200:9200"            # reachable only from your machine
     volumes:
-      - es_data:/usr/share/elasticsearch/data   # los datos sobreviven si se apaga
+      - es_data:/usr/share/elasticsearch/data   # the data survives a restart
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -qv red"]
       interval: 10s
@@ -21,28 +21,28 @@ services:
 
   api:
     build:
-      context: ./api                     # usa el Dockerfile de api/
-      additional_contexts:               # el Dockerfile también copia estas carpetas
-        search: ./search                 # buscador (José Luis)
-        tenk: ./tenk-answer              # generador de respuestas (Juan Carlos)
+      context: ./api                     # uses the Dockerfile in api/
+      additional_contexts:               # the Dockerfile also copies these folders
+        search: ./search                 # search (José Luis)
+        tenk: ./tenk-answer              # answer generation (Juan Carlos)
     container_name: filinglens-api
     environment:
-      # Dentro de la red de Compose, Elasticsearch se llama por el nombre del servicio,
-      # no por localhost. Haystack leerá esta variable cuando se conecte.
+      # Inside the Compose network, Elasticsearch is reached by its service name,
+      # not localhost. Haystack reads this variable when it connects.
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - EMBEDDING_MODEL=BAAI/bge-base-en-v1.5
-      # La llave se lee del archivo .env de la raíz (nunca se sube a GitHub)
+      # The key is read from the .env file at the root (never committed)
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      # Snapshots de Yahoo Finance (años después de los 10-K): la API solo los lee, nunca llama a Yahoo
+      # Yahoo Finance snapshots (years after the 10-Ks): the API only reads them, it never calls Yahoo
       - YAHOO_DIR=/app/data/yahoo
     volumes:
-      - hf_models:/root/.cache/huggingface   # reutiliza el modelo BGE ya descargado
-      - ./data/yahoo:/app/data/yahoo:ro      # creados por: docker compose --profile yahoo run --rm yahoo
+      - hf_models:/root/.cache/huggingface   # reuses the BGE model already downloaded
+      - ./data/yahoo:/app/data/yahoo:ro      # written by: docker compose --profile yahoo run --rm yahoo
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
       elasticsearch:
-        condition: service_healthy       # la API arranca solo cuando Elasticsearch está listo
+        condition: service_healthy       # the API starts only when Elasticsearch is ready
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
@@ -50,48 +50,48 @@ services:
       retries: 6
 
   ui:
-    build: ./ui                          # usa el Dockerfile de ui/
+    build: ./ui                          # uses the Dockerfile in ui/
     container_name: filinglens-ui
     environment:
-      # Chainlit llama a la API por el nombre del servicio, no por localhost.
+      # Chainlit calls the API by its service name, not localhost.
       - API_URL=http://api:8000
     ports:
       - "127.0.0.1:8001:8001"
     depends_on:
       api:
-        condition: service_healthy       # la UI arranca solo cuando la API está lista
+        condition: service_healthy       # the UI starts only when the API is ready
 
   eda:
     build: ./eda
     container_name: filinglens-eda
-    profiles: ["eda"]                    # corre solo a pedido: docker compose --profile eda up eda
+    profiles: ["eda"]                    # on demand only: docker compose --profile eda up eda
     ports:
-      - "127.0.0.1:8888:8888"            # Jupyter, solo accesible desde tu máquina
+      - "127.0.0.1:8888:8888"            # Jupyter, reachable only from your machine
     volumes:
-      - ./eda:/app/eda                   # el notebook y el .env se leen desde tu carpeta, y los cambios se guardan ahí
-      - ./data:/app/data                 # los scripts escriben data/eda y data/raw en tu máquina
+      - ./eda:/app/eda                   # the notebook and the .env are read from your folder, and changes are saved there
+      - ./data:/app/data                 # the scripts write data/eda and data/raw on your machine
 
   etl:
     build: ./etl
     container_name: filinglens-etl
-    profiles: ["etl"]                    # corre solo a pedido: docker compose --profile etl run --rm etl
+    profiles: ["etl"]                    # on demand only: docker compose --profile etl run --rm etl
     environment:
-      - TOKENIZER_MODEL=BAAI/bge-base-en-v1.5   # mide los chunks en tokens del mismo modelo del índice
+      - TOKENIZER_MODEL=BAAI/bge-base-en-v1.5   # measures chunks in tokens of the same model as the index
     volumes:
-      - ./data:/app/data                 # lee data/raw, escribe data/clean y data/chunks
-      - hf_models:/root/.cache/huggingface   # el tokenizador se descarga una sola vez
+      - ./data:/app/data                 # reads data/raw, writes data/clean and data/chunks
+      - hf_models:/root/.cache/huggingface   # the tokenizer is downloaded only once
 
   index:
     build: ./index
     container_name: filinglens-index
-    profiles: ["index"]                  # corre solo a pedido: docker compose --profile index run --rm index
+    profiles: ["index"]                  # on demand only: docker compose --profile index run --rm index
     environment:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - EMBEDDING_MODEL=BAAI/bge-base-en-v1.5
       - EMBEDDING_DIMS=768
     volumes:
-      - ./data:/app/data                 # lee data/chunks, cachea los embeddings en data/embeddings
-      - hf_models:/root/.cache/huggingface   # el modelo BGE se descarga una sola vez
+      - ./data:/app/data                 # reads data/chunks, caches the embeddings in data/embeddings
+      - hf_models:/root/.cache/huggingface   # the BGE model is downloaded only once
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -99,19 +99,19 @@ services:
   yahoo:
     build: ./yahoo-finance
     container_name: filinglens-yahoo
-    profiles: ["yahoo"]                  # corre solo a pedido: docker compose --profile yahoo run --rm yahoo
+    profiles: ["yahoo"]                  # on demand only: docker compose --profile yahoo run --rm yahoo
     volumes:
-      - ./data:/app/data                 # escribe data/yahoo/coverage.csv y data/yahoo/snapshots
+      - ./data:/app/data                 # writes data/yahoo/coverage.csv and data/yahoo/snapshots
 
-  # Evaluación RAGAS de las respuestas, en tres pasos (ver answer-eval/README.md)
-  # Paso 1: responde las preguntas (etiquetadas o las de RAGAS) con el mismo pipeline de la API (misma imagen que api)
+  # RAGAS evaluation of the answers, in three steps (see answer-eval/README.md)
+  # Step 1: answers the questions (labeled or written by RAGAS) with the API's own pipeline (same image as api)
   ragas-answers:
     build:
       context: ./api
       additional_contexts:
         search: ./search
         tenk: ./tenk-answer
-    profiles: ["ragas"]                  # corre solo a pedido: docker compose --profile ragas run --rm ragas-answers
+    profiles: ["ragas"]                  # on demand only: docker compose --profile ragas run --rm ragas-answers
     environment:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - EMBEDDING_MODEL=BAAI/bge-base-en-v1.5
@@ -123,7 +123,7 @@ services:
     volumes:
       - hf_models:/root/.cache/huggingface
       - ./data/yahoo:/app/data/yahoo:ro
-      - ./data/eval:/app/data/eval       # escribe data/eval/ragas/<fecha>/answers.jsonl
+      - ./data/eval:/app/data/eval       # writes data/eval/ragas/<date>/answers.jsonl
       - ./search/evaluation:/app/search/evaluation:ro
       - ./answer-eval:/app/answer-eval:ro
     command: ["python", "-m", "ragas_eval.answers"]
@@ -131,18 +131,18 @@ services:
       elasticsearch:
         condition: service_healthy
 
-  # Pasos 0 y 2: RAGAS escribe las preguntas y califica las respuestas (imagen propia: otras versiones de Anthropic y LangChain)
+  # Steps 0 and 2: RAGAS writes the questions and scores the answers (own image: other Anthropic and LangChain versions)
   ragas:
     build: ./answer-eval
-    profiles: ["ragas"]                  # corre solo a pedido: docker compose --profile ragas run --rm ragas
+    profiles: ["ragas"]                  # on demand only: docker compose --profile ragas run --rm ragas
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - EMBEDDING_MODEL=BAAI/bge-base-en-v1.5
-      - QUESTIONS_FILE=/app/search/evaluation/questions.json   # las 50 empresas del set de evaluación
+      - QUESTIONS_FILE=/app/search/evaluation/questions.json   # the 50 companies of the evaluation set
     volumes:
       - hf_models:/root/.cache/huggingface
-      - ./data/eval:/app/data/eval       # escribe testset.jsonl, scores.csv y summary.json
-      - ./data/chunks:/app/data/chunks:ro   # los documentos de los que RAGAS escribe las preguntas (paso 0)
+      - ./data/eval:/app/data/eval       # writes testset.jsonl, scores.csv and summary.json
+      - ./data/chunks:/app/data/chunks:ro   # the documents RAGAS writes the questions from (step 0)
       - ./search/evaluation:/app/search/evaluation:ro
 
 volumes:
