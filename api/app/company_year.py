@@ -43,7 +43,8 @@ EXCHANGE_WORDS_AFTER = frozenset({
 EXCHANGE_WORDS_BEFORE = frozenset({"a", "an", "on", "other", "traded", "listed"})
 
 # Capture any plausible four-digit year. A unique unsupported year is returned
-# unchanged; pipeline.py owns the 2019-2021 scope check and must reject it before
+# unchanged; pipeline.py decides which years it can answer (the 10-K years in the
+# index, plus the company's Yahoo Finance years) and rejects the rest before
 # search or Claude are called.
 YEAR_PATTERN = re.compile(r"(?<!\d)(?:19|20|21)\d{2}(?!\d)")
 

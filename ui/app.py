@@ -8,7 +8,8 @@ import httpx
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 CONNECTION_ERROR = "I couldn't connect to the server. Please try again in a moment."
-SEARCHING = "_Searching the 10-K reports…_"
+# Shown while waiting: general, because 2022 onwards is answered from Yahoo Finance, not the 10-Ks
+SEARCHING = "_Searching the sources…_"
 SUGGESTION = "suggested_question"  # name of the suggested-question buttons
 
 
@@ -96,8 +97,13 @@ async def suggestion_buttons(question: str, asked: list[str]) -> list[cl.Action]
 async def on_suggestion(action: cl.Action):
     # As if the user had typed it: their bubble first, then the answer
     question = action.payload["question"]
-    await cl.Message(content=question, type="user_message").send()
-    await answer(question)
+    user_message = cl.Message(content=question, type="user_message")
+    await user_message.send()
+    # The same "run" Chainlit opens for a typed question (see cl.on_message): without it,
+    # the chat doesn't show the copy icon under the answer
+    async with cl.Step(name="on_message", type="run", parent_id=user_message.id) as run:
+        run.input = question
+        await answer(question)
 
 
 @cl.on_message
